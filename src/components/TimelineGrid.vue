@@ -65,7 +65,7 @@ const {
   <div
     ref="gridContainer"
     class="mt-8 flex min-w-full relative select-none"
-    @mousedown.prevent="onGridMouseDown"
+    @mousedown="onGridMouseDown"
     @mousemove="onGridMouseMove"
     @mouseup="onGridMouseUp"
     @mouseleave="onGridMouseLeave"

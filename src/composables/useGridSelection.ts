@@ -1,7 +1,21 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { SelectionState, TableInfo } from '@/types'
-import { computed, ref } from 'vue'
+import { computed, onUnmounted, ref } from 'vue'
 import { COLUMN_WIDTH } from '@/constants'
+
+function findScrollableParent(el: HTMLElement | null): HTMLElement {
+  let parent = el?.parentElement ?? null
+  while (parent) {
+    const { overflow, overflowX, overflowY } = getComputedStyle(parent)
+    const scrollable = (v: string) => v === 'auto' || v === 'scroll'
+    if (scrollable(overflow) || scrollable(overflowX) || scrollable(overflowY)) {
+      if (parent.scrollWidth > parent.clientWidth || parent.scrollHeight > parent.clientHeight)
+        return parent
+    }
+    parent = parent.parentElement
+  }
+  return document.documentElement
+}
 
 export function useGridSelection(
   gridContainer: Ref<HTMLElement | null>,
@@ -11,10 +25,38 @@ export function useGridSelection(
   startMinutes: number,
 ) {
   const isDragging = ref(false)
+  const isPanning = ref(false)
   const selection = ref<SelectionState | null>(null)
   const selectionConfirmed = ref(false)
   const hoverTableIdx = ref(-1)
   const hoverQuarter = ref(-1)
+
+  let panScrollEl: HTMLElement | null = null
+  let panStartX = 0
+  let panStartY = 0
+  let panStartScrollLeft = 0
+  let panStartScrollTop = 0
+
+  function stopPanning() {
+    isPanning.value = false
+    panScrollEl = null
+    document.removeEventListener('mousemove', onDocumentPanMove)
+    document.removeEventListener('mouseup', onDocumentPanUp)
+  }
+
+  function onDocumentPanMove(e: MouseEvent) {
+    if (!isPanning.value || !panScrollEl)
+      return
+    panScrollEl.scrollLeft = panStartScrollLeft - (e.clientX - panStartX)
+    panScrollEl.scrollTop = panStartScrollTop - (e.clientY - panStartY)
+  }
+
+  function onDocumentPanUp(e: MouseEvent) {
+    if (e.button === 1)
+      stopPanning()
+  }
+
+  onUnmounted(stopPanning)
 
   function getTableIndexFromX(clientX: number): number {
     if (!gridContainer.value)
@@ -43,6 +85,24 @@ export function useGridSelection(
   }
 
   function onGridMouseDown(e: MouseEvent) {
+    if (e.button === 1) {
+      e.preventDefault()
+      panScrollEl = findScrollableParent(gridContainer.value)
+      panStartX = e.clientX
+      panStartY = e.clientY
+      panStartScrollLeft = panScrollEl.scrollLeft
+      panStartScrollTop = panScrollEl.scrollTop
+      isPanning.value = true
+      document.addEventListener('mousemove', onDocumentPanMove)
+      document.addEventListener('mouseup', onDocumentPanUp)
+      return
+    }
+
+    if (e.button !== 0)
+      return
+
+    e.preventDefault()
+
     if (selectionConfirmed.value) {
       selectionConfirmed.value = false
       selection.value = null
@@ -67,6 +127,9 @@ export function useGridSelection(
   }
 
   function onGridMouseMove(e: MouseEvent) {
+    if (isPanning.value)
+      return
+
     const bodyEl = (gridContainer.value as HTMLElement)?.querySelector('[data-grid-body]') as HTMLElement
     if (!bodyEl)
       return
@@ -86,7 +149,10 @@ export function useGridSelection(
     hoverQuarter.value = -1
   }
 
-  function onGridMouseUp() {
+  function onGridMouseUp(e: MouseEvent) {
+    if (e.button !== 0)
+      return
+
     if (!isDragging.value || !selection.value)
       return
 
