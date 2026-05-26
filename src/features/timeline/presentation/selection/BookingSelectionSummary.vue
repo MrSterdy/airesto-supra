@@ -1,29 +1,24 @@
 <script setup lang="ts">
-import type { TableInfo } from '@/features/timeline/domain/timeline.types'
+import type { SelectionBookingProps } from '@/features/timeline/domain/timeline.types'
+import { computed } from 'vue'
 import { formatRussianDay } from '@/shared/lib/formatRussianDay'
 
-defineProps<{
-  selectedDay: string
-  timeRange: { start: string, end: string }
-  duration: string
-  capacity: number
-  selectedTables: TableInfo[]
+const props = withDefaults(defineProps<SelectionBookingProps & {
   variant?: 'card' | 'dialog'
-}>()
+}>(), {
+  variant: 'card',
+})
+
+const tableListLabel = computed(() =>
+  props.selectedTables.map(table => `#${table.number}`).join(' + '),
+)
 </script>
 
 <template>
   <template v-if="variant === 'dialog'">
     <p class="flex justify-between items-center">
       Столы
-      <span>
-        <template v-for="(table, index) in selectedTables" :key="table.id">
-          <template v-if="index > 0">
-            +
-          </template>
-          #<span class="text-foreground">{{ table.number }}</span>
-        </template>
-      </span>
+      <span class="text-foreground">{{ tableListLabel }}</span>
     </p>
     <p class="flex justify-between items-center">
       Количество гостей
@@ -42,13 +37,7 @@ defineProps<{
       {{ duration }}
     </p>
     <p class="text-sm mt-1">
-      Столы
-      <template v-for="(table, index) in selectedTables" :key="table.id">
-        <template v-if="index > 0">
-          +
-        </template>
-        #<span class="font-bold">{{ table.number }}</span>
-      </template>
+      Столы <span class="font-bold">{{ tableListLabel }}</span>
     </p>
     <p class="text-sm">
       На <span class="font-bold">{{ capacity }}</span> чел

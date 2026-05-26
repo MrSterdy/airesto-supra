@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRef, Ref } from 'vue'
-import type { LayoutEvent, TableInfo, TimelineEvent } from '@/features/timeline/domain/timeline.types'
+import type { LayoutEvent, TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import { useMemoize } from '@vueuse/core'
 import { computed, toValue } from 'vue'
 import { layoutEventsForTable } from '@/features/timeline/domain/booking-layout'
@@ -10,9 +10,9 @@ function eventsSignature(events: TimelineEvent[]): string {
   return events.map(event => `${event.id}:${event.startMinutes}:${event.endMinutes}`).join('|')
 }
 
+/** Раскладка броней по столбцу с мемоизацией при zoom и смене событий. */
 export function useBookingLayout(
-  _filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
-  eventsPerTable: ComputedRef<Map<string, TimelineEvent[]>>,
+  eventsPerTable: ComputedRef<Map<string, TimelineEvent[]>> | Ref<Map<string, TimelineEvent[]>>,
   minutesToPx: (minutes: number) => number,
   columnWidth: MaybeRef<number>,
   indent: MaybeRef<number>,

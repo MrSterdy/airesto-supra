@@ -1,17 +1,17 @@
 import type { MaybeRef } from 'vue'
-import { computed, toValue } from 'vue'
+import { computed, toRef } from 'vue'
 import {
   buildTimeSlots,
   formatTimeSlotLabel,
   minutesFromTime,
-  quarterToTime,
 } from '@/features/timeline/domain/timeGrid'
 
+/** Временная сетка: слоты, высоты и перевод минут в пиксели. */
 export function useTimeGrid(openingTime: string, closingTime: string, slotHeight: MaybeRef<number>) {
   const startMinutes = minutesFromTime(openingTime)
   const endMinutes = minutesFromTime(closingTime)
 
-  const resolvedSlotHeight = computed(() => toValue(slotHeight))
+  const resolvedSlotHeight = toRef(slotHeight)
 
   const timeSlots = computed(() => buildTimeSlots(openingTime, closingTime))
 
@@ -24,14 +24,6 @@ export function useTimeGrid(openingTime: string, closingTime: string, slotHeight
     return ((minutes - startMinutes) / 30) * resolvedSlotHeight.value
   }
 
-  function formatTimeSlot(slot: string): string {
-    return formatTimeSlotLabel(slot)
-  }
-
-  function quarterToTimeForShift(quarterIndex: number): string {
-    return quarterToTime(startMinutes, quarterIndex)
-  }
-
   return {
     startMinutes,
     endMinutes,
@@ -40,9 +32,7 @@ export function useTimeGrid(openingTime: string, closingTime: string, slotHeight
     quarterHeight,
     totalQuarters,
     minutesToPx,
-    formatTimeSlot,
-    quarterToTime: quarterToTimeForShift,
-    minutesFromTime,
+    formatTimeSlot: formatTimeSlotLabel,
     slotHeight: resolvedSlotHeight,
   }
 }

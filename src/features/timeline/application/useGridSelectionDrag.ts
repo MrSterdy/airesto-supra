@@ -1,7 +1,6 @@
-import type { ComputedRef, Ref } from 'vue'
 import type { useGridCoordinates } from './useGridCoordinates'
 import type { useSelectionConfirm } from './useSelectionConfirm'
-import type { SelectionState, TableInfo } from '@/features/timeline/domain/timeline.types'
+import type { GridMetrics, SelectionState, TableListRef } from '@/features/timeline/domain/timeline.types'
 import { computed, ref } from 'vue'
 import {
   computeNormalizedSelection,
@@ -19,16 +18,11 @@ type GridCoordinates = ReturnType<typeof useGridCoordinates>
  * Drag ЛКМ по сетке: выделение диапазона столов, подтверждение брони.
  */
 export function useGridSelectionDrag(
-  filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
+  filteredTables: TableListRef,
   shiftStartMinutes: number,
   coordinates: GridCoordinates,
   confirm: ReturnType<typeof useSelectionConfirm>,
-  resolvedMetrics: {
-    columnWidth: ComputedRef<number>
-    quarterHeight: ComputedRef<number>
-    timeColWidth: ComputedRef<number>
-    headerHeight: ComputedRef<number>
-  },
+  resolvedMetrics: GridMetrics,
 ) {
   const isDragging = ref(false)
   const currentSelection = ref<SelectionState | null>(null)
@@ -110,12 +104,12 @@ export function useGridSelectionDrag(
     mouseEvent.preventDefault()
 
     if (confirm.selectionConfirmed.value) {
-      confirm.cancelDialog()
+      confirm.cancelSelection()
       currentSelection.value = null
       return true
     }
 
-    const gridBodyElement = (mouseEvent.currentTarget as HTMLElement).querySelector('[data-grid-body]') as HTMLElement | null
+    const gridBodyElement = coordinates.getGridBody()
     if (!gridBodyElement)
       return false
 

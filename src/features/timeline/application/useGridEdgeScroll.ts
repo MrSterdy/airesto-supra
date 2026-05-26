@@ -9,7 +9,7 @@ const SCROLL_STEP_PX = 12
  * Автопрокрутка scroll-контейнера при drag у края viewport.
  */
 export function useGridEdgeScroll(scrollElement: Ref<HTMLElement | null>) {
-  const pointer = ref({ x: 0, y: 0 })
+  let pointer = { x: 0, y: 0 }
   const isActive = ref(false)
 
   const { pause, resume } = useRafFn(() => {
@@ -17,7 +17,7 @@ export function useGridEdgeScroll(scrollElement: Ref<HTMLElement | null>) {
     if (!element || !isActive.value)
       return
 
-    const { x: clientX, y: clientY } = pointer.value
+    const { x: clientX, y: clientY } = pointer
     const rect = element.getBoundingClientRect()
     let deltaX = 0
     let deltaY = 0
@@ -53,7 +53,7 @@ export function useGridEdgeScroll(scrollElement: Ref<HTMLElement | null>) {
     if (!element)
       return
 
-    pointer.value = { x: clientX, y: clientY }
+    pointer = { x: clientX, y: clientY }
     const rect = element.getBoundingClientRect()
     const nearEdge
       = clientX < rect.left + EDGE_THRESHOLD_PX

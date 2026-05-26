@@ -8,10 +8,7 @@ function clampQuarterIndex(quarterIndex: number, totalQuarters: number, mode: Qu
   return Math.max(0, Math.min(quarterIndex, maxIndex))
 }
 
-/**
- * Индекс quarter по смещению от верха grid body.
- * snap floor - начало drag; round - обновление при движении.
- */
+/** Индекс quarter по смещению от верха grid body. */
 export function offsetToQuarterIndex(
   offsetFromBodyTop: number,
   quarterHeightPx: number,

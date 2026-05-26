@@ -1,7 +1,7 @@
 import type { LayoutItem } from './types'
 import { INTERSECTION_THRESHOLD } from '@/features/timeline/domain/constants'
 
-/** Кластеры внутри пересекающихся групп: события, начавшиеся в пределах интервала пересечения. */
+/** Кластеры внутри пересекающихся групп (события с близким startMin). */
 export function buildIntersectionClusters(items: LayoutItem[], overlapGroup: number[]): number[][] {
   const intersectionClusters: number[][] = []
   let currentCluster: number[] = [overlapGroup[0]]
@@ -22,6 +22,7 @@ export function buildIntersectionClusters(items: LayoutItem[], overlapGroup: num
   return intersectionClusters
 }
 
+/** Распределяет ширину столбцов внутри кластера пересечений. */
 export function applyClusterLayout(
   items: LayoutItem[],
   intersectionClusters: number[][],

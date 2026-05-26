@@ -1,18 +1,16 @@
 import type { MaybeRefOrGetter } from 'vue'
+import type { ReservationSearchEntry } from '@/features/restaurant/domain/mapApiToTimeline'
 import { refDebounced } from '@vueuse/core'
 import { useFuse } from '@vueuse/integrations/useFuse'
 import { computed, toRef } from 'vue'
 
-export interface ReservationSearchItem {
-  tableId: string
-  name: string
-}
+export type { ReservationSearchEntry as ReservationSearchItem }
 
 /**
  * Поиск столов по имени с debounce.
  */
 export function useRestaurantSearch(
-  searchIndex: MaybeRefOrGetter<ReservationSearchItem[]>,
+  searchIndex: MaybeRefOrGetter<ReservationSearchEntry[]>,
   searchQuery: MaybeRefOrGetter<string>,
   debounceMs = 200,
 ) {

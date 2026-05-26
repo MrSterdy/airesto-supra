@@ -1,3 +1,4 @@
+/** Ближайший предок с overflow auto/scroll или documentElement. */
 export function findScrollableParent(element: HTMLElement | null): HTMLElement {
   let parent = element?.parentElement ?? null
   while (parent) {

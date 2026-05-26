@@ -36,15 +36,9 @@ export function useGridHover(
     )
   }
 
-  function clearHover() {
-    hoverTableIdx.value = -1
-    hoverQuarter.value = -1
-  }
-
   return {
     hoverTableIdx,
     hoverQuarter,
     updateHoverFromEvent,
-    clearHover,
   }
 }

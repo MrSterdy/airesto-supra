@@ -7,6 +7,7 @@ export { SCALE_LEVELS }
 export const BASE_TIME_COL_WIDTH = 52
 export const BASE_HEADER_HEIGHT = 48
 
+/** Масштаб таблицы из UI preferences (zoom, размеры ячеек). */
 export function useTimelineScale() {
   const {
     scale,

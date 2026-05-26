@@ -3,6 +3,7 @@ import { useDocumentVisibility, useNow } from '@vueuse/core'
 import { computed, toValue } from 'vue'
 import { getMinutesFromMidnight } from '@/shared/lib/restaurantTime'
 
+/** Позиция линии "сейчас" на таблице (px) или -1, если не показывать. */
 export function useCurrentTime(
   startMinutes: MaybeRefOrGetter<number>,
   endMinutes: MaybeRefOrGetter<number>,

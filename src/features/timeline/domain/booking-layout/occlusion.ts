@@ -10,7 +10,7 @@ function rectsOverlapVertically(first: LayoutItem, second: LayoutItem): boolean 
 
 /** Обрезка видимой высоты контента, если сверху лежит другая бронь. */
 export function applyContentOcclusion(items: LayoutItem[], indentPx: number): void {
-  const occlusionGap = indentPx + 1
+  const OCCLUSION_GAP = indentPx + 1
 
   for (let index = 0; index < items.length; index++) {
     let contentMaxHeight = items[index].height
@@ -25,7 +25,7 @@ export function applyContentOcclusion(items: LayoutItem[], indentPx: number): vo
       const itemTop = items[index].top
 
       if (occluderTop > itemTop) {
-        contentMaxHeight = Math.min(contentMaxHeight, occluderTop - itemTop - occlusionGap)
+        contentMaxHeight = Math.min(contentMaxHeight, occluderTop - itemTop - OCCLUSION_GAP)
       }
     }
 

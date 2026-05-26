@@ -18,14 +18,14 @@ export function useTimelineZoomShortcuts(
     if (!shouldHandleZoom(keyboardEvent))
       return
     keyboardEvent.preventDefault()
-    zoomIn()
+    throttledZoomIn()
   }
 
   function handleZoomOut(keyboardEvent: KeyboardEvent) {
     if (!shouldHandleZoom(keyboardEvent))
       return
     keyboardEvent.preventDefault()
-    zoomOut()
+    throttledZoomOut()
   }
 
   onKeyStroke(['+', '=', 'Add', 'NumpadAdd'], handleZoomIn, { target: document })

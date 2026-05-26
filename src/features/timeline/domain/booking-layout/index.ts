@@ -4,6 +4,9 @@ import { applyClusterLayout, buildIntersectionClusters } from './intersectionClu
 import { applyContentOcclusion } from './occlusion'
 import { buildOverlapGroups } from './overlapGroups'
 
+/**
+ * Раскладка броней для одного стола.
+ */
 export function layoutEventsForTable(
   events: TimelineEvent[],
   minutesToPx: (minutes: number) => number,

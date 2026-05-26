@@ -7,10 +7,6 @@ import { computed, toValue } from 'vue'
 const CARD_MIN_WIDTH = 140
 const CARD_MIN_HEIGHT = 120
 
-const breakpoints = useBreakpoints({
-  sm: 640,
-})
-
 /**
  * Выбор междукарточкой и модальным диалогом:
  * узкий viewport, мелкий размер или маленькое выделение - dialog.
@@ -20,6 +16,9 @@ export function useSelectionPresentation(
   selectionDimensions: ComputedRef<SelectionDimensions | null>,
   scale: MaybeRefOrGetter<number>,
 ) {
+  const breakpoints = useBreakpoints({
+    sm: 640,
+  })
   const isNarrowViewport = breakpoints.smaller('sm')
 
   const useInlineCard = computed(() => {

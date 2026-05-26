@@ -18,19 +18,17 @@ export function useSelectionConfirm() {
   const selectionConfirmed = shallowRef(false)
 
   const {
-    confirm: confirmDialog,
-    cancel: cancelDialog,
+    confirm: confirmSelection,
+    cancel: cancelSelection,
     onConfirm,
     onCancel,
   } = useConfirmDialog(selectionConfirmed)
 
   return {
     selectionConfirmed,
-    confirmDialog,
-    cancelDialog,
     onConfirm,
     onCancel,
-    confirmSelection: confirmDialog,
-    cancelSelection: cancelDialog,
+    confirmSelection,
+    cancelSelection,
   }
 }

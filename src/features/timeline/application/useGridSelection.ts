@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue'
-import type { TableInfo } from '@/features/timeline/domain/timeline.types'
-import { computed, toValue } from 'vue'
+import type { TableListRef } from '@/features/timeline/domain/timeline.types'
+import { toRef } from 'vue'
 import { useCoalescedPointerMove } from './useCoalescedPointerMove'
 import { useGridCoordinates } from './useGridCoordinates'
 import { useGridEdgeScroll } from './useGridEdgeScroll'
@@ -17,7 +17,7 @@ export function useGridSelection(
   gridContainer: Ref<HTMLElement | null>,
   gridBody: MaybeRefOrGetter<HTMLElement | null>,
   scrollElement: Ref<HTMLElement | null>,
-  filteredTables: ComputedRef<TableInfo[]> | import('vue').Ref<TableInfo[]>,
+  filteredTables: TableListRef,
   quarterHeight: MaybeRef<number>,
   totalQuarters: ComputedRef<number>,
   startMinutes: number,
@@ -25,10 +25,10 @@ export function useGridSelection(
   timeColWidth: MaybeRef<number>,
   headerHeight: MaybeRef<number>,
 ) {
-  const resolvedColumnWidth = computed(() => toValue(columnWidth))
-  const resolvedQuarterHeight = computed(() => toValue(quarterHeight))
-  const resolvedTimeColWidth = computed(() => toValue(timeColWidth))
-  const resolvedHeaderHeight = computed(() => toValue(headerHeight))
+  const resolvedColumnWidth = toRef(columnWidth)
+  const resolvedQuarterHeight = toRef(quarterHeight)
+  const resolvedTimeColWidth = toRef(timeColWidth)
+  const resolvedHeaderHeight = toRef(headerHeight)
 
   const coordinates = useGridCoordinates(
     gridContainer,

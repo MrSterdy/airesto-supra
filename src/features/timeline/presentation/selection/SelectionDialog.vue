@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { TableInfo } from '@/features/timeline/domain/timeline.types'
+import type { SelectionBookingProps } from '@/features/timeline/domain/timeline.types'
 import { useScrollLock } from '@vueuse/core'
-import { watch } from 'vue'
+import { computed, watch } from 'vue'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -14,19 +14,18 @@ import {
 import { formatRussianDay } from '@/shared/lib/formatRussianDay'
 import BookingSelectionSummary from './BookingSelectionSummary.vue'
 
-const props = defineProps<{
+const props = defineProps<SelectionBookingProps & {
   open: boolean
-  timeRange: { start: string, end: string }
-  duration: string
-  capacity: number
-  selectedTables: TableInfo[]
-  selectedDay: string
 }>()
 
 const emit = defineEmits<{
   confirm: []
   cancel: []
 }>()
+
+const dialogSubtitle = computed(() =>
+  `${formatRussianDay(props.selectedDay)} • ${props.timeRange.start} – ${props.timeRange.end}`,
+)
 
 const isScrollLocked = useScrollLock(document.body)
 
@@ -46,9 +45,7 @@ function onOpenChange(value: boolean) {
       <DialogHeader>
         <DialogTitle>Новое бронирование</DialogTitle>
         <DialogDescription>
-          {{ formatRussianDay(selectedDay) }}
-          {{ ' • ' }}
-          {{ timeRange.start }} – {{ timeRange.end }}
+          {{ dialogSubtitle }}
         </DialogDescription>
       </DialogHeader>
 

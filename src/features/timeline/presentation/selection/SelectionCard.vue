@@ -1,15 +1,10 @@
 <script setup lang="ts">
-import type { TableInfo } from '@/features/timeline/domain/timeline.types'
+import type { SelectionBookingProps, SelectionBoxStyle } from '@/features/timeline/domain/timeline.types'
 import { Button } from '@/components/ui/button'
 import BookingSelectionSummary from './BookingSelectionSummary.vue'
 
-defineProps<{
-  style: Record<string, string>
-  timeRange: { start: string, end: string }
-  duration: string
-  capacity: number
-  selectedTables: TableInfo[]
-  selectedDay: string
+defineProps<SelectionBookingProps & {
+  boxStyle: SelectionBoxStyle
 }>()
 
 const emit = defineEmits<{
@@ -21,7 +16,7 @@ const emit = defineEmits<{
 <template>
   <div
     class="absolute z-9999 rounded-lg bg-card border border-border shadow-lg flex flex-col overflow-hidden"
-    :style="style"
+    :style="boxStyle"
   >
     <div class="flex-1 p-3 flex flex-col gap-1 overflow-auto">
       <p class="font-semibold text-sm">

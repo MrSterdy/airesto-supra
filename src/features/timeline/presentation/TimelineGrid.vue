@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent } from 'vue'
+import { defineAsyncComponent, useTemplateRef, watchEffect } from 'vue'
 import { useTimelineGrid } from '@/features/timeline/application/useTimelineGrid'
 import QuarterHoverOverlay from './QuarterHoverOverlay.vue'
 import ScalePopover from './ScalePopover.vue'
@@ -13,6 +13,14 @@ const SelectionDialog = defineAsyncComponent(
 )
 
 const grid = useTimelineGrid()
+
+const gridContainerEl = useTemplateRef<HTMLElement>('gridContainer')
+const gridBodyEl = useTemplateRef<HTMLElement>('gridBody')
+
+watchEffect(() => {
+  grid.gridContainer.value = gridContainerEl.value
+  grid.gridBodyRef.value = gridBodyEl.value
+})
 
 const {
   filteredTables,
@@ -61,7 +69,7 @@ const {
 
 <template>
   <div
-    :ref="(el) => { grid.gridContainer.value = el as HTMLElement | null }"
+    ref="gridContainer"
     class="mt-8 flex min-w-full flex-col relative select-none"
     @mousedown="onGridMouseDown"
     @mousemove="onGridMouseMove"
@@ -95,7 +103,7 @@ const {
 
       <!-- Y-координаты hover/drag привязаны к этому элементу -->
       <div
-        :ref="(el) => { grid.gridBodyRef.value = el as HTMLElement | null }"
+        ref="gridBody"
         data-grid-body
         class="absolute pointer-events-none"
         :style="{
@@ -108,21 +116,17 @@ const {
 
       <QuarterHoverOverlay
         v-if="hoverOverlayStyle"
-        :visible="hoverOverlayStyle.visible"
-        :left="hoverOverlayStyle.left"
-        :top="hoverOverlayStyle.top"
-        :width="hoverOverlayStyle.width"
-        :height="hoverOverlayStyle.height"
+        v-bind="hoverOverlayStyle"
       />
 
       <SelectionOverlay
         v-if="selection && selectionStyle && !selectionConfirmed"
-        :style="selectionStyle"
+        :box-style="selectionStyle"
       />
 
       <SelectionCard
         v-if="useInlineCard && selectionStyle && selectionTimeRange"
-        :style="selectionStyle"
+        :box-style="selectionStyle"
         :time-range="selectionTimeRange"
         :duration="selectionDuration"
         :capacity="selectionCapacity"

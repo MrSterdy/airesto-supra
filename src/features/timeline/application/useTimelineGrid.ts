@@ -1,5 +1,4 @@
-import { useScroll } from '@vueuse/core'
-import { computed, ref, toRef, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useBookingLayout } from './useBookingLayout'
 import { useCurrentTime } from './useCurrentTime'
 import { useGridScrollAnchors } from './useGridScrollAnchors'
@@ -22,9 +21,6 @@ export function useTimelineGrid() {
     throw new Error('TimelineGrid requires provideTimelineContext()')
 
   const { filteredTables, eventsPerTable, openingTime, closingTime, timeZone, currentDay, selectedDay } = timeline
-
-  const filteredTablesRef = toRef(() => filteredTables.value)
-  const eventsRef = computed(() => eventsPerTable.value)
 
   const {
     scale,
@@ -51,8 +47,7 @@ export function useTimelineGrid() {
   } = useTimeGrid(openingTime, closingTime, slotHeight)
 
   const { getTableLayout, layoutVersion } = useBookingLayout(
-    filteredTablesRef,
-    eventsRef,
+    eventsPerTable,
     minutesToPx,
     columnWidth,
     indent,
@@ -86,7 +81,7 @@ export function useTimelineGrid() {
     gridContainer,
     gridBodyRef,
     scrollElement,
-    filteredTablesRef,
+    filteredTables,
     quarterHeight,
     totalQuarters,
     startMinutes,
@@ -121,8 +116,6 @@ export function useTimelineGrid() {
     isDragging: selection.isDragging,
   })
 
-  const { y: scrollY, x: scrollX } = useScroll(scrollElement)
-
   const { useInlineCard, isDialogOpen } = useSelectionPresentation(
     selection.selectionConfirmed,
     selection.selectionDimensions,
@@ -130,11 +123,6 @@ export function useTimelineGrid() {
   )
 
   const scalePopover = useScalePopover()
-
-  watch([scrollY, scrollX], () => {
-    if (scalePopover.isOpen.value)
-      scalePopover.close()
-  })
 
   watch([slotHeight, headerHeight, timeColWidth], () => {
     measureGridScrollOffsets()

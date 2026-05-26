@@ -17,7 +17,9 @@ export interface PreferencesContext {
   zones: string[]
 }
 
-const DEFAULT_SCALE_LEVEL = 1
+/** Индекс уровня масштаба по умолчанию (1.0x). */
+export const DEFAULT_SCALE_LEVEL = 1
+
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
 
 export function createDefaultPreferences(currentDay: string): UiPreferences {
@@ -29,7 +31,8 @@ export function createDefaultPreferences(currentDay: string): UiPreferences {
   }
 }
 
-function isValidScaleLevel(value: unknown): value is number {
+/** Проверяет, что значение — допустимый индекс в SCALE_LEVELS. */
+export function isValidScaleLevel(value: unknown): value is number {
   return typeof value === 'number'
     && Number.isInteger(value)
     && value >= 0

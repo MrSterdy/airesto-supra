@@ -27,7 +27,7 @@ const displayDays = computed(() =>
 </script>
 
 <template>
-  <form class="sticky left-0 flex flex-col gap-4 px-4 mt-4">
+  <section class="sticky left-0 flex flex-col gap-4 px-4 mt-4">
     <div class="flex flex-col gap-1">
       <Label class="text-muted-foreground">Дата</Label>
       <div class="flex gap-2">
@@ -59,5 +59,5 @@ const displayDays = computed(() =>
         </Button>
       </div>
     </div>
-  </form>
+  </section>
 </template>

@@ -1,7 +1,9 @@
+import type { Ref } from 'vue'
+
 /**
  * Мультивыбор зон: пустой массив = все зоны.
  */
-export function useZoneFilter(selectedZones: { value: string[] }) {
+export function useZoneFilter(selectedZones: Ref<string[]>) {
   function isZoneActive(zone: string) {
     return selectedZones.value.length === 0 || selectedZones.value.includes(zone)
   }

@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
-import { tryOnScopeDispose, useEventListener, useMouse } from '@vueuse/core'
-import { ref, watch } from 'vue'
+import { tryOnScopeDispose, useEventListener } from '@vueuse/core'
+import { ref } from 'vue'
 import { findScrollableParent } from '@/shared/lib/findScrollableParent'
 
 /**
@@ -11,7 +11,6 @@ export function useGridPanning(
   preferredScrollElement?: Ref<HTMLElement | null>,
 ) {
   const isPanning = ref(false)
-  const { x: mouseX, y: mouseY } = useMouse({ type: 'client' })
 
   let scrollableContainer: HTMLElement | null = null
   let panStartX = 0
@@ -24,11 +23,11 @@ export function useGridPanning(
     scrollableContainer = null
   }
 
-  watch([mouseX, mouseY, isPanning], () => {
+  useEventListener(document, 'mousemove', (mouseEvent: MouseEvent) => {
     if (!isPanning.value || !scrollableContainer)
       return
-    scrollableContainer.scrollLeft = panStartScrollLeft - (mouseX.value - panStartX)
-    scrollableContainer.scrollTop = panStartScrollTop - (mouseY.value - panStartY)
+    scrollableContainer.scrollLeft = panStartScrollLeft - (mouseEvent.clientX - panStartX)
+    scrollableContainer.scrollTop = panStartScrollTop - (mouseEvent.clientY - panStartY)
   })
 
   useEventListener(document, 'mouseup', (mouseEvent: MouseEvent) => {
@@ -45,8 +44,11 @@ export function useGridPanning(
     mouseEvent.preventDefault()
     scrollableContainer = preferredScrollElement?.value
       ?? findScrollableParent(gridContainer.value)
-    panStartX = mouseX.value
-    panStartY = mouseY.value
+    if (!scrollableContainer)
+      return false
+
+    panStartX = mouseEvent.clientX
+    panStartY = mouseEvent.clientY
     panStartScrollLeft = scrollableContainer.scrollLeft
     panStartScrollTop = scrollableContainer.scrollTop
     isPanning.value = true

@@ -1,6 +1,8 @@
 import type { LayoutItem } from './types'
 
-/** События с пересечением по времени попадают в одну группу для горизонтального стека. */
+/**
+ * События с пересечением по времени попадают в одну группу для горизонтального стека.
+ */
 export function buildOverlapGroups(items: LayoutItem[]): number[][] {
   const overlapGroups: number[][] = []
   const visited = new Set<number>()

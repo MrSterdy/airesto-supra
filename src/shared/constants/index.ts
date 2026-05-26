@@ -7,14 +7,14 @@ export const INDENT = 4
 const DEFAULT_ORDER_COLOR = { bg: 'rgba(127, 215, 204, 0.16)', border: '#7FD7CC' }
 const DEFAULT_RESERVATION_COLOR = { bg: 'rgba(255, 112, 67, 0.16)', border: '#FF7043' }
 
-export const ORDER_COLORS: Record<string, { bg: string, border: string }> = {
+export const ORDER_COLORS = {
   New: { bg: 'rgba(127, 215, 204, 0.16)', border: '#7FD7CC' },
   Closed: { bg: 'rgba(127, 215, 204, 0.08)', border: '#7FD7CC' },
   Bill: { bg: 'rgba(74, 201, 155, 0.16)', border: '#4AC99B' },
   Banquet: { bg: 'rgba(179, 72, 247, 0.16)', border: '#7B439E' },
-}
+} as const
 
-export const RESERVATION_COLORS: Record<string, { bg: string, border: string }> = {
+export const RESERVATION_COLORS = {
   'Заявка': { bg: 'rgba(255, 112, 67, 0.16)', border: '#FF7043' },
   'Новая': { bg: 'rgba(255, 112, 67, 0.16)', border: '#FF7043' },
   'Живая очередь': { bg: 'rgba(0, 151, 253, 0.16)', border: '#007AFF' },
@@ -22,13 +22,16 @@ export const RESERVATION_COLORS: Record<string, { bg: string, border: string }> 
   'Занял место': { bg: 'rgba(74, 201, 155, 0.16)', border: '#4AC99B' },
   'Вызвана': { bg: 'rgba(0, 151, 253, 0.24)', border: '#007AFF' },
   'Отменен': { bg: 'rgba(255, 255, 255, 0.04)', border: '#666' },
-}
+} as const
+
+export type OrderStatus = keyof typeof ORDER_COLORS
+export type ReservationStatus = keyof typeof RESERVATION_COLORS
 
 export function getEventColor(kind: 'order' | 'reservation', status: string) {
   if (kind === 'order') {
-    return ORDER_COLORS[status] ?? DEFAULT_ORDER_COLOR
+    return ORDER_COLORS[status as OrderStatus] ?? DEFAULT_ORDER_COLOR
   }
-  return RESERVATION_COLORS[status] ?? DEFAULT_RESERVATION_COLOR
+  return RESERVATION_COLORS[status as ReservationStatus] ?? DEFAULT_RESERVATION_COLOR
 }
 
 export const BADGE_COLORS: Record<string, { bg: string, text: string }> = {

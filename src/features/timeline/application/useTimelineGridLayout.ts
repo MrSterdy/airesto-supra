@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue'
 import { computed } from 'vue'
-import { computeHoverOverlayPixels } from '@/features/timeline/domain/overlayStyle'
+import { computeOverlayPixels } from '@/features/timeline/domain/overlayStyle'
 
 interface GridSelectionFacade {
   isHoverActive: () => boolean
@@ -30,7 +30,7 @@ export function useTimelineGridLayout(
     if (tableIdx < 0 || quarter < 0)
       return null
 
-    return computeHoverOverlayPixels(
+    return computeOverlayPixels(
       tableIdx,
       quarter,
       timeColWidth.value,

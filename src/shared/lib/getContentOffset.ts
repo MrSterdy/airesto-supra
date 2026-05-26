@@ -1,4 +1,6 @@
-/** Смещение элемента относительно предка в координатах контента (без учёта текущего scroll). */
+/**
+ * Смещение элемента относительно предка в координатах контента (без учёта scroll).
+ */
 export function getContentOffset(
   element: HTMLElement,
   ancestor: HTMLElement,

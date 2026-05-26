@@ -4,7 +4,7 @@ import { computed, ref, watch } from 'vue'
 import { findScrollableParent } from '@/shared/lib/findScrollableParent'
 import { getContentOffset } from '@/shared/lib/getContentOffset'
 
-/** Привязка сетки к страничному scroll-контейнеру (main). */
+/** Привязка таблицы к scroll-контейнеру страницы и расчёт margin для виртуализатора. */
 export function useGridScrollAnchors(
   gridContainer: Ref<HTMLElement | null>,
   headerHeight: ComputedRef<number>,

@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue'
 import type { QuarterClampMode, QuarterSnapMode } from '@/features/timeline/domain/gridCoordinates'
-import type { TableInfo } from '@/features/timeline/domain/timeline.types'
-import { computed, toValue } from 'vue'
+import type { TableListRef } from '@/features/timeline/domain/timeline.types'
+import { toRef, toValue } from 'vue'
 import { offsetToQuarterIndex, offsetToTableIndex } from '@/features/timeline/domain/gridCoordinates'
 
 /**
@@ -11,15 +11,15 @@ import { offsetToQuarterIndex, offsetToTableIndex } from '@/features/timeline/do
 export function useGridCoordinates(
   gridContainer: Ref<HTMLElement | null>,
   gridBody: MaybeRefOrGetter<HTMLElement | null>,
-  filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
+  filteredTables: TableListRef,
   quarterHeightPx: MaybeRef<number>,
   totalQuarters: ComputedRef<number>,
   columnWidthPx: MaybeRef<number>,
   timeColumnWidthPx: MaybeRef<number>,
 ) {
-  const resolvedQuarterHeight = computed(() => toValue(quarterHeightPx))
-  const resolvedColumnWidth = computed(() => toValue(columnWidthPx))
-  const resolvedTimeColWidth = computed(() => toValue(timeColumnWidthPx))
+  const resolvedQuarterHeight = toRef(quarterHeightPx)
+  const resolvedColumnWidth = toRef(columnWidthPx)
+  const resolvedTimeColWidth = toRef(timeColumnWidthPx)
 
   function getGridBody(): HTMLElement | null {
     return toValue(gridBody)

@@ -1,9 +1,11 @@
 import type { PreferencesContext, UiPreferences } from './normalizePreferences'
-import { createSharedComposable, useColorMode, useCounter, useStorage, useToggle } from '@vueuse/core'
-import { computed, watch } from 'vue'
+import { createSharedComposable, useColorMode, useStorage, useToggle } from '@vueuse/core'
+import { computed } from 'vue'
 import { SCALE_LEVELS } from '@/shared/constants'
 import {
   createDefaultPreferences,
+  DEFAULT_SCALE_LEVEL,
+  isValidScaleLevel,
   normalizePreferences,
   UI_PREFERENCES_STORAGE_KEY,
 } from './normalizePreferences'
@@ -11,8 +13,15 @@ import {
 export { UI_PREFERENCES_STORAGE_KEY }
 export type { PreferencesContext, ThemePreference, UiPreferences } from './normalizePreferences'
 
-const DEFAULT_SCALE_LEVEL = 1
 const MAX_SCALE_LEVEL = SCALE_LEVELS.length - 1
+
+function preferencesEqual(a: UiPreferences, b: UiPreferences): boolean {
+  return a.theme === b.theme
+    && a.scaleLevel === b.scaleLevel
+    && a.selectedDay === b.selectedDay
+    && a.selectedZones.length === b.selectedZones.length
+    && a.selectedZones.every((zone, index) => zone === b.selectedZones[index])
+}
 
 export const useUiPreferences = createSharedComposable(() => {
   const storage = useStorage<UiPreferences>(
@@ -48,32 +57,16 @@ export const useUiPreferences = createSharedComposable(() => {
 
   const toggleTheme = useToggle(isDark)
 
-  const scaleCounter = useCounter(DEFAULT_SCALE_LEVEL, { min: 0, max: MAX_SCALE_LEVEL })
-
-  watch(
-    () => storage.value.scaleLevel,
-    (level) => {
-      if (typeof level === 'number' && Number.isInteger(level) && level >= 0 && level < SCALE_LEVELS.length) {
-        if (scaleCounter.get() !== level)
-          scaleCounter.set(level)
-      }
-    },
-    { immediate: true },
-  )
-
-  watch(
-    () => scaleCounter.count.value,
-    (level) => {
-      if (storage.value.scaleLevel !== level)
-        storage.value = { ...storage.value, scaleLevel: level }
-    },
-  )
-
   const scaleLevel = computed({
-    get: () => scaleCounter.count.value,
+    get: () => {
+      const level = storage.value.scaleLevel
+      return isValidScaleLevel(level) ? level : DEFAULT_SCALE_LEVEL
+    },
     set: (level: number) => {
-      const isValid = typeof level === 'number' && Number.isInteger(level) && level >= 0 && level < SCALE_LEVELS.length
-      scaleCounter.set(isValid ? level : DEFAULT_SCALE_LEVEL)
+      storage.value = {
+        ...storage.value,
+        scaleLevel: isValidScaleLevel(level) ? level : DEFAULT_SCALE_LEVEL,
+      }
     },
   })
 
@@ -81,8 +74,15 @@ export const useUiPreferences = createSharedComposable(() => {
   const canZoomIn = computed(() => scaleLevel.value < MAX_SCALE_LEVEL)
   const canZoomOut = computed(() => scaleLevel.value > 0)
 
-  const zoomIn = () => scaleCounter.inc()
-  const zoomOut = () => scaleCounter.dec()
+  const zoomIn = () => {
+    if (canZoomIn.value)
+      scaleLevel.value++
+  }
+
+  const zoomOut = () => {
+    if (canZoomOut.value)
+      scaleLevel.value--
+  }
 
   const selectedDay = computed({
     get: () => storage.value.selectedDay,
@@ -119,6 +119,6 @@ export function applyPreferencesContext(context: PreferencesContext) {
   const defaults = createDefaultPreferences(context.currentDay)
   const normalized = normalizePreferences(storage.value, context, defaults)
 
-  if (JSON.stringify(normalized) !== JSON.stringify(storage.value))
+  if (!preferencesEqual(normalized, storage.value))
     storage.value = normalized
 }

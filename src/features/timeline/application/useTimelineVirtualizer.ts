@@ -8,6 +8,7 @@ const DRAG_OVERSCAN = 4
 
 export type { VisibleRowRange }
 
+/** Виртуализация строк (quarter) и столбцов (столы) через TanStack Virtual. */
 export function useTimelineVirtualizer(options: {
   scrollElement: Ref<HTMLElement | null>
   tableCount: ComputedRef<number>

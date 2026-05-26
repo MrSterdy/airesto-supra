@@ -4,8 +4,9 @@ import type {
   SelectionTimeRange,
   TableInfo,
 } from './timeline.types'
-import { quarterToTime } from './timeGrid'
+import { minutesFromTime, quarterToTime } from './timeGrid'
 
+/** Нормализует индексы столов и quarter-слотов (min/max). */
 export function computeNormalizedSelection(selection: {
   startTableIdx: number
   endTableIdx: number
@@ -20,6 +21,7 @@ export function computeNormalizedSelection(selection: {
   }
 }
 
+/** Ширина и высота выделения в пикселях. */
 export function computeSelectionDimensions(
   normalized: NormalizedSelection,
   columnWidthPx: number,
@@ -32,6 +34,7 @@ export function computeSelectionDimensions(
   }
 }
 
+/** Абсолютные CSS-стили прямоугольника выделения. */
 export function computeSelectionStyle(
   normalized: NormalizedSelection,
   dimensions: SelectionDimensions,
@@ -64,9 +67,7 @@ export function computeSelectionTimeRange(
 
 /** Длительность интервала на русском. */
 export function formatDurationRussian(timeRange: SelectionTimeRange): string {
-  const startParts = timeRange.start.split(':').map(Number)
-  const endParts = timeRange.end.split(':').map(Number)
-  const diffMinutes = (endParts[0] * 60 + endParts[1]) - (startParts[0] * 60 + startParts[1])
+  const diffMinutes = minutesFromTime(timeRange.end) - minutesFromTime(timeRange.start)
   const hours = Math.floor(diffMinutes / 60)
   const minutes = diffMinutes % 60
 

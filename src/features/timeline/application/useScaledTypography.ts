@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue'
 import { computed, toValue } from 'vue'
 
-/** Масштабируемые размеры шрифта для элементов таблицы. */
+/** Масштабируемые размеры шрифта и отступов для элементов таблицы. */
 export function useScaledTypography(scale: MaybeRefOrGetter<number>) {
   const resolvedScale = computed(() => toValue(scale))
 

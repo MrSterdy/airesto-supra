@@ -13,6 +13,7 @@ const props = defineProps<{
 
 const { labelStyle, timeLabelOffset } = useScaledTypography(() => props.layout.scale)
 
+/** Виртуализатор отдаёт quarter-строки; чётные индексы - начало 30-минутного слота. */
 const slotIndicesInView = computed(() => {
   const indices = new Set<number>()
   for (const row of props.virtualRows) {
