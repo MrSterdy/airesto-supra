@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { TableInfo } from '@/types'
+import { formatRussianDay } from '@/composables/useRussianDate'
 import { Button } from './ui/button'
 import {
   Dialog,
@@ -24,13 +25,6 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-function formatDay(dateStr: string) {
-  const date = new Date(`${dateStr}T00:00:00`)
-  const day = date.getDate()
-  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
-  return `${day} ${months[date.getMonth()]}`
-}
-
 function onOpenChange(value: boolean) {
   if (!value)
     emit('cancel')
@@ -43,7 +37,7 @@ function onOpenChange(value: boolean) {
       <DialogHeader>
         <DialogTitle>Новое бронирование</DialogTitle>
         <DialogDescription>
-          {{ formatDay(selectedDay) }}
+          {{ formatRussianDay(selectedDay) }}
           {{ ' • ' }}
           {{ timeRange.start }} – {{ timeRange.end }}
         </DialogDescription>

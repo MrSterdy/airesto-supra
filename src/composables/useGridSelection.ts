@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRef, Ref } from 'vue'
 import type { SelectionState, TableInfo } from '@/types'
-import { computed, onUnmounted, ref, toValue } from 'vue'
+import { tryOnScopeDispose, useEventListener } from '@vueuse/core'
+import { computed, ref, toValue } from 'vue'
 
 function findScrollableParent(el: HTMLElement | null): HTMLElement {
   let parent = el?.parentElement ?? null
@@ -46,23 +47,21 @@ export function useGridSelection(
   function stopPanning() {
     isPanning.value = false
     panScrollEl = null
-    document.removeEventListener('mousemove', onDocumentPanMove)
-    document.removeEventListener('mouseup', onDocumentPanUp)
   }
 
-  function onDocumentPanMove(e: MouseEvent) {
+  useEventListener(document, 'mousemove', (e: MouseEvent) => {
     if (!isPanning.value || !panScrollEl)
       return
     panScrollEl.scrollLeft = panStartScrollLeft - (e.clientX - panStartX)
     panScrollEl.scrollTop = panStartScrollTop - (e.clientY - panStartY)
-  }
+  })
 
-  function onDocumentPanUp(e: MouseEvent) {
+  useEventListener(document, 'mouseup', (e: MouseEvent) => {
     if (e.button === 1)
       stopPanning()
-  }
+  })
 
-  onUnmounted(stopPanning)
+  tryOnScopeDispose(stopPanning)
 
   function getTableIndexFromX(clientX: number): number {
     if (!gridContainer.value)
@@ -99,8 +98,6 @@ export function useGridSelection(
       panStartScrollLeft = panScrollEl.scrollLeft
       panStartScrollTop = panScrollEl.scrollTop
       isPanning.value = true
-      document.addEventListener('mousemove', onDocumentPanMove)
-      document.addEventListener('mouseup', onDocumentPanUp)
       return
     }
 
@@ -192,14 +189,23 @@ export function useGridSelection(
     }
   })
 
-  const selectionStyle = computed(() => {
+  const selectionDimensions = computed(() => {
     if (!normalizedSelection.value)
       return null
     const { minTableIdx, maxTableIdx, minQuarter, maxQuarter } = normalizedSelection.value
+    return {
+      width: (maxTableIdx - minTableIdx + 1) * resolvedColumnWidth.value,
+      height: (maxQuarter - minQuarter) * resolvedQuarterHeight.value,
+    }
+  })
+
+  const selectionStyle = computed(() => {
+    if (!normalizedSelection.value || !selectionDimensions.value)
+      return null
+    const { minTableIdx, minQuarter } = normalizedSelection.value
+    const { width, height } = selectionDimensions.value
     const left = resolvedTimeColWidth.value + minTableIdx * resolvedColumnWidth.value
-    const width = (maxTableIdx - minTableIdx + 1) * resolvedColumnWidth.value
     const top = resolvedHeaderHeight.value + minQuarter * resolvedQuarterHeight.value
-    const height = (maxQuarter - minQuarter) * resolvedQuarterHeight.value
     return { left: `${left}px`, width: `${width}px`, top: `${top}px`, height: `${height}px` }
   })
 
@@ -282,6 +288,7 @@ export function useGridSelection(
     hoverTableIdx,
     hoverQuarter,
     normalizedSelection,
+    selectionDimensions,
     selectionStyle,
     selectedTables,
     selectionTimeRange,

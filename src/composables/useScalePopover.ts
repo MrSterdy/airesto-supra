@@ -1,17 +1,23 @@
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onClickOutside, onKeyStroke, useEventListener, useToggle, useWindowSize } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
 
 const POPOVER_WIDTH = 112
 const POPOVER_HEIGHT = 88
 const OFFSET = 8
 
 export function useScalePopover() {
-  const isOpen = ref(false)
+  const [isOpen, toggleOpen] = useToggle(false)
   const position = ref({ x: 0, y: 0 })
   const popoverRef = ref<HTMLElement | null>(null)
+  const { width, height } = useWindowSize()
+
+  const bounds = computed(() => ({
+    maxX: width.value - POPOVER_WIDTH - OFFSET,
+    maxY: height.value - POPOVER_HEIGHT - OFFSET,
+  }))
 
   function clampPosition(x: number, y: number) {
-    const maxX = window.innerWidth - POPOVER_WIDTH - OFFSET
-    const maxY = window.innerHeight - POPOVER_HEIGHT - OFFSET
+    const { maxX, maxY } = bounds.value
     return {
       x: Math.max(OFFSET, Math.min(x, maxX)),
       y: Math.max(OFFSET, Math.min(y, maxY)),
@@ -20,7 +26,7 @@ export function useScalePopover() {
 
   function open(x: number, y: number) {
     position.value = clampPosition(x + OFFSET, y + OFFSET)
-    isOpen.value = true
+    toggleOpen(true)
   }
 
   function openFromEvent(e: MouseEvent) {
@@ -28,43 +34,24 @@ export function useScalePopover() {
   }
 
   function close() {
-    isOpen.value = false
+    toggleOpen(false)
   }
 
-  function getPopoverElement(): HTMLElement | null {
-    const el = popoverRef.value
-    if (!el)
-      return null
-    if (el instanceof HTMLElement)
-      return el
-    return (el as { $el?: HTMLElement }).$el ?? null
-  }
-
-  function onDocumentClick(e: MouseEvent) {
-    if (!isOpen.value)
+  watch(isOpen, (open, _, onCleanup) => {
+    if (!open)
       return
-    const el = getPopoverElement()
-    if (el?.contains(e.target as Node))
-      return
-    close()
-  }
+    onCleanup(onClickOutside(popoverRef, close))
+  })
 
-  function onKeyDown(e: KeyboardEvent) {
-    if (e.key === 'Escape')
+  onKeyStroke('Escape', () => {
+    if (isOpen.value)
       close()
-  }
-
-  onMounted(() => {
-    document.addEventListener('click', onDocumentClick)
-    document.addEventListener('keydown', onKeyDown)
-    window.addEventListener('scroll', close, true)
   })
 
-  onUnmounted(() => {
-    document.removeEventListener('click', onDocumentClick)
-    document.removeEventListener('keydown', onKeyDown)
-    window.removeEventListener('scroll', close, true)
-  })
+  useEventListener(window, 'scroll', () => {
+    if (isOpen.value)
+      close()
+  }, { capture: true })
 
   return {
     isOpen,

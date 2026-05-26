@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComputedRef } from 'vue'
 import type { TableInfo, TimelineEvent } from '@/types'
-import { computed, ref } from 'vue'
+import { toRef, useTemplateRef } from 'vue'
 import { useBookingLayout } from '@/composables/useBookingLayout'
 import { useCurrentTime } from '@/composables/useCurrentTime'
 import { useGridSelection } from '@/composables/useGridSelection'
@@ -25,8 +25,8 @@ const props = defineProps<{
   selectedDay: string
 }>()
 
-const filteredTablesRef = computed(() => props.filteredTables)
-const eventsRef = computed(() => props.eventsPerTable)
+const filteredTablesRef = toRef(props, 'filteredTables')
+const eventsRef = toRef(props, 'eventsPerTable')
 
 const {
   scale,
@@ -62,11 +62,12 @@ const { tableLayouts } = useBookingLayout(
 
 const { currentTimePosition } = useCurrentTime(startMinutes, endMinutes, minutesToPx)
 
-const gridContainer = ref<HTMLElement | null>(null)
+const gridContainer = useTemplateRef<HTMLElement>('gridContainer')
 
 const {
   selection,
   selectionConfirmed,
+  selectionDimensions,
   selectionStyle,
   selectedTables,
   selectionTimeRange,
@@ -93,7 +94,7 @@ const {
 
 const { useInlineCard, useDialog } = useSelectionPresentation(
   selectionConfirmed,
-  selectionStyle,
+  selectionDimensions,
   scale,
 )
 

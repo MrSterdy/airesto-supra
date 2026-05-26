@@ -1,16 +1,8 @@
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { useNow } from '@vueuse/core'
+import { computed } from 'vue'
 
 export function useCurrentTime(startMinutes: number, endMinutes: number, minutesToPx: (min: number) => number) {
-  const now = ref(new Date())
-  let timer: ReturnType<typeof setInterval>
-
-  onMounted(() => {
-    timer = setInterval(() => {
-      now.value = new Date()
-    }, 60_000)
-  })
-
-  onUnmounted(() => clearInterval(timer))
+  const now = useNow({ interval: 60_000 })
 
   const currentTimePosition = computed(() => {
     const h = now.value.getHours()

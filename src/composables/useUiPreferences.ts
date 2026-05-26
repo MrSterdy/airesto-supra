@@ -1,6 +1,5 @@
-import type { RemovableRef } from '@vueuse/core'
-import { useStorage } from '@vueuse/core'
-import { computed, watchEffect } from 'vue'
+import { createSharedComposable, useColorMode, useStorage, useToggle } from '@vueuse/core'
+import { computed } from 'vue'
 import { SCALE_LEVELS } from '@/constants'
 
 export const UI_PREFERENCES_STORAGE_KEY = 'airesto-ui'
@@ -73,42 +72,39 @@ export function normalizePreferences(
   return result
 }
 
-let prefs: RemovableRef<UiPreferences> | null = null
-let themeSyncStarted = false
+const useUiPreferencesState = createSharedComposable(() => {
+  const storage = useStorage<UiPreferences>(
+    UI_PREFERENCES_STORAGE_KEY,
+    createDefaults(''),
+    localStorage,
+  )
 
-function getPrefs(): RemovableRef<UiPreferences> {
-  if (!prefs) {
-    prefs = useStorage<UiPreferences>(UI_PREFERENCES_STORAGE_KEY, createDefaults(''), localStorage)
-    if (!themeSyncStarted) {
-      themeSyncStarted = true
-      watchEffect(() => {
-        document.documentElement.classList.toggle('dark', prefs!.value.theme === 'dark')
-      })
-    }
-  }
-  return prefs
-}
+  const themeStorageRef = computed({
+    get: () => storage.value.theme,
+    set: (theme) => {
+      if (theme === 'dark' || theme === 'light')
+        storage.value = { ...storage.value, theme }
+    },
+  })
 
-export function applyPreferencesContext(ctx: PreferencesContext) {
-  const storage = getPrefs()
-  const defaults = createDefaults(ctx.currentDay)
-  const normalized = normalizePreferences(storage.value, ctx, defaults)
+  useColorMode({
+    attribute: 'class',
+    modes: { dark: 'dark', light: '' },
+    storageRef: themeStorageRef,
+    initialValue: 'dark',
+  })
 
-  if (JSON.stringify(normalized) !== JSON.stringify(storage.value))
-    storage.value = normalized
-}
+  const isDark = computed({
+    get: () => storage.value.theme === 'dark',
+    set: (value: boolean) => {
+      storage.value = {
+        ...storage.value,
+        theme: value ? 'dark' : 'light',
+      }
+    },
+  })
 
-export function useUiPreferences() {
-  const storage = getPrefs()
-
-  const isDark = computed(() => storage.value.theme === 'dark')
-
-  function toggleTheme() {
-    storage.value = {
-      ...storage.value,
-      theme: storage.value.theme === 'dark' ? 'light' : 'dark',
-    }
-  }
+  const toggleTheme = useToggle(isDark)
 
   const scaleLevel = computed({
     get: () => storage.value.scaleLevel,
@@ -161,4 +157,17 @@ export function useUiPreferences() {
     selectedDay,
     selectedZones,
   }
+})
+
+export function applyPreferencesContext(ctx: PreferencesContext) {
+  const storage = useUiPreferencesState().prefs
+  const defaults = createDefaults(ctx.currentDay)
+  const normalized = normalizePreferences(storage.value, ctx, defaults)
+
+  if (JSON.stringify(normalized) !== JSON.stringify(storage.value))
+    storage.value = normalized
+}
+
+export function useUiPreferences() {
+  return useUiPreferencesState()
 }

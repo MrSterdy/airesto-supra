@@ -29,13 +29,11 @@ const {
     </h2>
 
     <BookingFilters
+      v-model:selected-day="selectedDay"
+      v-model:selected-zones="selectedZones"
       :available-days="availableDays"
       :current-day="currentDay"
-      :selected-day="selectedDay"
       :zones="zones"
-      :selected-zones="selectedZones"
-      @update:selected-day="selectedDay = $event"
-      @update:selected-zones="selectedZones = $event"
     />
 
     <TimelineGrid

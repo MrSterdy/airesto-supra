@@ -1,27 +1,17 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatRussianDay } from '@/composables/useRussianDate'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
 
 const props = defineProps<{
   availableDays: string[]
   currentDay: string
-  selectedDay: string
   zones: string[]
-  selectedZones: string[]
 }>()
 
-const emit = defineEmits<{
-  'update:selectedDay': [value: string]
-  'update:selectedZones': [value: string[]]
-}>()
-
-function formatDay(dateStr: string) {
-  const date = new Date(`${dateStr}T00:00:00`)
-  const day = date.getDate()
-  const months = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
-  return `${day} ${months[date.getMonth()]}`
-}
+const selectedDay = defineModel<string>('selectedDay', { required: true })
+const selectedZones = defineModel<string[]>('selectedZones', { required: true })
 
 function relativeLabel(dateStr: string) {
   const today = new Date(`${props.currentDay}T00:00:00`)
@@ -38,28 +28,27 @@ function relativeLabel(dateStr: string) {
 const displayDays = computed(() =>
   props.availableDays.map(d => ({
     value: d,
-    label: formatDay(d),
+    label: formatRussianDay(d),
     sub: relativeLabel(d),
   })),
 )
 
 function isZoneActive(zone: string) {
-  return props.selectedZones.length === 0 || props.selectedZones.includes(zone)
+  return selectedZones.value.length === 0 || selectedZones.value.includes(zone)
 }
 
 function toggleZone(zone: string) {
-  if (props.selectedZones.length === 0) {
-    emit('update:selectedZones', [zone])
+  if (selectedZones.value.length === 0) {
+    selectedZones.value = [zone]
     return
   }
 
-  if (props.selectedZones.includes(zone)) {
-    const next = props.selectedZones.filter(z => z !== zone)
-    emit('update:selectedZones', next)
+  if (selectedZones.value.includes(zone)) {
+    selectedZones.value = selectedZones.value.filter(z => z !== zone)
     return
   }
 
-  emit('update:selectedZones', [...props.selectedZones, zone])
+  selectedZones.value = [...selectedZones.value, zone]
 }
 </script>
 
@@ -74,7 +63,7 @@ function toggleZone(zone: string) {
           type="button"
           class="flex flex-col h-auto gap-0 py-1 items-start"
           :variant="selectedDay === day.value ? 'default' : 'secondary'"
-          @click="emit('update:selectedDay', day.value)"
+          @click="selectedDay = day.value"
         >
           <span class="leading-tight font-semibold">{{ day.label }}</span>
           <span class="leading-tight">{{ day.sub }}</span>

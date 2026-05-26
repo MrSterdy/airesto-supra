@@ -1,4 +1,5 @@
 import type { TableInfo, TimelineEvent } from '@/types'
+import { refDebounced } from '@vueuse/core'
 import { computed, ref } from 'vue'
 import { applyPreferencesContext, useUiPreferences } from '@/composables/useUiPreferences'
 import { mockData } from '@/data/mock'
@@ -36,6 +37,7 @@ export function useRestaurantData() {
 
   const { selectedDay, selectedZones } = useUiPreferences()
   const searchQuery = ref('')
+  const debouncedSearchQuery = refDebounced(searchQuery, 200)
 
   function tableMatchesSearch(table: (typeof data.tables)[number], query: string, day: string): boolean {
     return table.reservations.some(
@@ -51,7 +53,7 @@ export function useRestaurantData() {
       const zoneFilter = new Set(selectedZones.value)
       tables = tables.filter(t => zoneFilter.has(t.zone))
     }
-    const query = searchQuery.value.trim().toLowerCase()
+    const query = debouncedSearchQuery.value.trim().toLowerCase()
     if (query) {
       const day = selectedDay.value
       tables = tables.filter(t => tableMatchesSearch(t, query, day))

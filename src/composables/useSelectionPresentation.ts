@@ -1,28 +1,34 @@
 import type { ComputedRef, Ref } from 'vue'
+import { useMediaQuery } from '@vueuse/core'
 import { computed } from 'vue'
 
 /** Minimum selection size to anchor an inline card (px). */
 const CARD_MIN_WIDTH = 140
 const CARD_MIN_HEIGHT = 120
 
+export interface SelectionDimensions {
+  width: number
+  height: number
+}
+
 export function useSelectionPresentation(
   selectionConfirmed: Ref<boolean>,
-  selectionStyle: ComputedRef<Record<string, string> | null>,
+  selectionDimensions: ComputedRef<SelectionDimensions | null>,
   scale: ComputedRef<number>,
 ) {
+  const isNarrowViewport = useMediaQuery('(max-width: 640px)')
+
   const useInlineCard = computed(() => {
-    if (!selectionConfirmed.value || !selectionStyle.value)
+    if (!selectionConfirmed.value || !selectionDimensions.value)
+      return false
+
+    if (isNarrowViewport.value)
       return false
 
     if (scale.value < 1)
       return false
 
-    const width = Number.parseFloat(selectionStyle.value.width)
-    const height = Number.parseFloat(selectionStyle.value.height)
-
-    if (Number.isNaN(width) || Number.isNaN(height))
-      return false
-
+    const { width, height } = selectionDimensions.value
     return width >= CARD_MIN_WIDTH && height >= CARD_MIN_HEIGHT
   })
 
