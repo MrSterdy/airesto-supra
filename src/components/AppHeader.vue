@@ -1,9 +1,24 @@
 <script setup lang="ts">
 import { LogOut, Search, Sun } from '@lucide/vue'
+import { useTemplateRef } from 'vue'
+import { useSearchFocusShortcut } from '@/composables/useSearchFocusShortcut'
 import { Button } from './ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from './ui/input-group'
 
 defineProps<{ restaurantName: string }>()
+
+const searchQuery = defineModel<string>('searchQuery', { default: '' })
+
+const searchInputRef = useTemplateRef('searchInput')
+
+function getSearchInput(): HTMLInputElement | null {
+  const root = searchInputRef.value?.$el
+  if (root instanceof HTMLInputElement)
+    return root
+  return root?.querySelector?.('input') ?? null
+}
+
+useSearchFocusShortcut(getSearchInput)
 </script>
 
 <template>
@@ -11,7 +26,12 @@ defineProps<{ restaurantName: string }>()
     <a href="#" class="font-semibold text-sm">AIRESTO | {{ restaurantName }}</a>
     <nav class="flex gap-2">
       <InputGroup class="h-7">
-        <InputGroupInput placeholder="⌘+Л поиск по имени" class="text-xs!" />
+        <InputGroupInput
+          ref="searchInput"
+          v-model="searchQuery"
+          placeholder="⌘+Л поиск по имени"
+          class="text-xs!"
+        />
         <InputGroupAddon>
           <Search class="size-4" stroke-width="1" />
         </InputGroupAddon>

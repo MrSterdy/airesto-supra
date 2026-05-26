@@ -13,12 +13,16 @@ const {
   zones,
   filteredTables,
   eventsPerTable,
+  searchQuery,
 } = useRestaurantData()
 </script>
 
 <template>
   <main class="flex flex-col h-screen overflow-auto">
-    <AppHeader :restaurant-name="restaurant.restaurant_name" />
+    <AppHeader
+      v-model:search-query="searchQuery"
+      :restaurant-name="restaurant.restaurant_name"
+    />
 
     <h2 class="sticky left-0 mt-8 text-xl font-bold px-4">
       Бронирования

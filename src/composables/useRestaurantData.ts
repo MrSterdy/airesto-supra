@@ -21,6 +21,7 @@ export function useRestaurantData() {
 
   const selectedDay = ref(currentDay)
   const selectedZone = ref<string | null>(null)
+  const searchQuery = ref('')
 
   const zones = computed(() => {
     const set = new Set<string>()
@@ -30,27 +31,41 @@ export function useRestaurantData() {
     return Array.from(set)
   })
 
-  const filteredTables = computed<TableInfo[]>(() => {
+  function tableMatchesSearch(table: (typeof data.tables)[number], query: string, day: string): boolean {
+    return table.reservations.some(
+      res =>
+        isoToDate(res.seating_time) === day
+        && res.name_for_reservation.toLowerCase().includes(query),
+    )
+  }
+
+  const visibleTables = computed(() => {
     let tables = data.tables
     if (selectedZone.value) {
       tables = tables.filter(t => t.zone === selectedZone.value)
     }
-    return tables.map(t => ({
+    const query = searchQuery.value.trim().toLowerCase()
+    if (query) {
+      const day = selectedDay.value
+      tables = tables.filter(t => tableMatchesSearch(t, query, day))
+    }
+    return tables
+  })
+
+  const filteredTables = computed<TableInfo[]>(() =>
+    visibleTables.value.map(t => ({
       id: t.id,
       number: t.number,
       zone: t.zone,
       capacity: t.capacity,
-    }))
-  })
+    })),
+  )
 
   const eventsPerTable = computed(() => {
     const map = new Map<string, TimelineEvent[]>()
     const day = selectedDay.value
 
-    let tables = data.tables
-    if (selectedZone.value) {
-      tables = tables.filter(t => t.zone === selectedZone.value)
-    }
+    const tables = visibleTables.value
 
     for (const table of tables) {
       const events: TimelineEvent[] = []
@@ -98,6 +113,7 @@ export function useRestaurantData() {
     currentDay,
     selectedDay,
     selectedZone,
+    searchQuery,
     zones,
     filteredTables,
     eventsPerTable,
