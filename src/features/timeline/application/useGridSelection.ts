@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRef, Ref } from 'vue'
 import type { TableInfo } from '@/features/timeline/domain/timeline.types'
-import { useThrottleFn } from '@vueuse/core'
+import { useGridEdgeScroll } from './useGridEdgeScroll'
 import { useGridHover } from './useGridHover'
 import { useGridPanning } from './useGridPanning'
 import { useGridSelectionDrag } from './useGridSelectionDrag'
@@ -11,6 +11,7 @@ import { useGridSelectionDrag } from './useGridSelectionDrag'
  */
 export function useGridSelection(
   gridContainer: Ref<HTMLElement | null>,
+  scrollElement: Ref<HTMLElement | null>,
   filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
   quarterHeight: MaybeRef<number>,
   totalQuarters: ComputedRef<number>,
@@ -19,7 +20,7 @@ export function useGridSelection(
   timeColWidth: MaybeRef<number>,
   headerHeight: MaybeRef<number>,
 ) {
-  const panning = useGridPanning(gridContainer)
+  const panning = useGridPanning(gridContainer, scrollElement)
 
   const hover = useGridHover(
     gridContainer,
@@ -42,24 +43,48 @@ export function useGridSelection(
     hover.getGridBody,
   )
 
+  const edgeScroll = useGridEdgeScroll(scrollElement)
+
+  let pendingMoveEvent: MouseEvent | null = null
+  let moveRafId = 0
+
+  function processMouseMove(mouseEvent: MouseEvent) {
+    if (panning.isPanning.value)
+      return
+
+    hover.updateHoverFromEvent(mouseEvent)
+    drag.updateSelectionFromEvent(mouseEvent)
+    edgeScroll.updateEdgeScroll(mouseEvent.clientX, mouseEvent.clientY, drag.isDragging.value)
+  }
+
   function onGridMouseDown(mouseEvent: MouseEvent) {
     if (panning.startPanningFromMouseDown(mouseEvent))
       return
     drag.onGridMouseDown(mouseEvent)
   }
 
-  const onGridMouseMove = useThrottleFn((mouseEvent: MouseEvent) => {
-    if (panning.isPanning.value)
+  function onGridMouseMove(mouseEvent: MouseEvent) {
+    pendingMoveEvent = mouseEvent
+    if (moveRafId)
       return
+    moveRafId = requestAnimationFrame(() => {
+      moveRafId = 0
+      const event = pendingMoveEvent
+      pendingMoveEvent = null
+      if (event)
+        processMouseMove(event)
+    })
+  }
 
-    hover.updateHoverFromEvent(mouseEvent)
-    drag.updateSelectionFromEvent(mouseEvent)
-  }, 16)
+  function onGridMouseUp(mouseEvent: MouseEvent) {
+    edgeScroll.stopEdgeScroll()
+    drag.onGridMouseUp(mouseEvent)
+  }
 
-  function isHoveredQuarter(tableIdx: number, quarter: number): boolean {
+  function isHoverActive(): boolean {
     if (drag.isDragging.value || drag.selectionConfirmed.value)
       return false
-    return hover.isHoveredQuarter(tableIdx, quarter)
+    return hover.hoverTableIdx.value >= 0 && hover.hoverQuarter.value >= 0
   }
 
   return {
@@ -77,10 +102,10 @@ export function useGridSelection(
     selectionCapacity: drag.selectionCapacity,
     onGridMouseDown,
     onGridMouseMove,
-    onGridMouseUp: drag.onGridMouseUp,
+    onGridMouseUp,
     confirmSelection: drag.confirmSelection,
     cancelSelection: drag.cancelSelection,
     clearSelection: drag.clearSelection,
-    isHoveredQuarter,
+    isHoverActive,
   }
 }

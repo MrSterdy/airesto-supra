@@ -1,30 +1,43 @@
 <script setup lang="ts">
 import type { LayoutEvent, TableInfo } from '@/features/timeline/domain/timeline.types'
-import type { TableColumnLayoutProps } from '@/features/timeline/domain/timelineLayout.types'
-import { usePreferredReducedMotion } from '@vueuse/core'
+import type { TableColumnLayoutProps, VisibleRowRange } from '@/features/timeline/domain/timelineLayout.types'
 import { computed } from 'vue'
 import { useScaledTypography } from '@/features/timeline/application/useScaledTypography'
+import { isLayoutEventInRowRange } from '@/features/timeline/domain/visibleRange'
 import BookingBubble from './BookingBubble.vue'
 
 const props = defineProps<{
   table: TableInfo
-  tableIdx: number
   events: LayoutEvent[]
   layout: TableColumnLayoutProps
   currentTimePosition: number
-  isHoveredQuarter: (tableIdx: number, quarter: number) => boolean
+  visibleRowRange: VisibleRowRange
+  columnLeft: number
 }>()
 
 const emit = defineEmits<{
   contextmenu: [event: MouseEvent]
 }>()
 
-const prefersReducedMotion = usePreferredReducedMotion()
 const { labelStyle, titleStyle } = useScaledTypography(() => props.layout.scale)
 
-const quarterHoverClass = computed(() =>
-  prefersReducedMotion.value ? '' : 'transition-colors duration-75',
+const gridLineBackground = computed(() => {
+  const slotHeight = props.layout.slotHeight
+  return `repeating-linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 8%, transparent) 0, color-mix(in oklch, var(--foreground) 8%, transparent) 1px, transparent 1px, transparent ${slotHeight}px)`
+})
+
+const visibleEvents = computed(() =>
+  props.events.filter(event =>
+    isLayoutEventInRowRange(
+      event,
+      props.visibleRowRange.start,
+      props.visibleRowRange.end,
+      props.layout.quarterHeight,
+    ),
+  ),
 )
+
+const showCurrentTimeLine = computed(() => props.currentTimePosition >= 0)
 
 function onContextMenu(mouseEvent: MouseEvent) {
   mouseEvent.preventDefault()
@@ -34,12 +47,16 @@ function onContextMenu(mouseEvent: MouseEvent) {
 
 <template>
   <div
-    class="shrink-0 grow relative"
-    :style="{ minWidth: `${layout.columnWidth}px` }"
+    class="absolute top-0 flex flex-col"
+    :style="{
+      left: `${columnLeft}px`,
+      width: `${layout.columnWidth}px`,
+      height: `${layout.headerHeight + layout.gridHeight}px`,
+    }"
     @contextmenu="onContextMenu"
   >
     <div
-      class="sticky top-0 z-20 bg-background flex flex-col items-center justify-center"
+      class="sticky top-0 z-20 bg-background flex flex-col items-center justify-center shrink-0"
       :style="{ height: `${layout.headerHeight}px` }"
     >
       <div class="flex items-center gap-1" :style="labelStyle">
@@ -50,24 +67,15 @@ function onContextMenu(mouseEvent: MouseEvent) {
       <span class="text-muted-foreground" :style="labelStyle">{{ table.zone }}</span>
     </div>
 
-    <div class="relative" :style="{ height: `${layout.gridHeight}px` }">
+    <div
+      class="relative shrink-0"
+      :style="{
+        height: `${layout.gridHeight}px`,
+        backgroundImage: gridLineBackground,
+      }"
+    >
       <div
-        v-for="quarter in layout.totalQuarters"
-        :key="`hover-${quarter}`"
-        class="absolute w-full"
-        :class="[quarterHoverClass, isHoveredQuarter(tableIdx, quarter - 1) ? 'bg-secondary' : '']"
-        :style="{ top: `${(quarter - 1) * layout.quarterHeight}px`, height: `${layout.quarterHeight}px` }"
-      />
-
-      <div
-        v-for="lineIndex in layout.timeSlotsCount"
-        :key="`line-${lineIndex}`"
-        class="absolute w-full border-t border-foreground/8 pointer-events-none"
-        :style="{ top: `${(lineIndex - 1) * layout.slotHeight}px` }"
-      />
-
-      <div
-        v-if="currentTimePosition >= 0"
+        v-if="showCurrentTimeLine"
         class="absolute w-full z-10 pointer-events-none"
         :style="{ top: `${currentTimePosition}px` }"
       >
@@ -75,10 +83,11 @@ function onContextMenu(mouseEvent: MouseEvent) {
       </div>
 
       <BookingBubble
-        v-for="event in events"
-        :key="event.event.id"
-        :layout-event="event"
+        v-for="layoutEvent in visibleEvents"
+        :key="layoutEvent.event.id"
+        :layout-event="layoutEvent"
         :scale="layout.scale"
+        :enable-hover="true"
       />
     </div>
   </div>

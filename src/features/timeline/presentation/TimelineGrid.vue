@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import type { TableColumnLayoutProps, TimeColumnLayoutProps } from '@/features/timeline/domain/timelineLayout.types'
-import { computed } from 'vue'
+import { defineAsyncComponent } from 'vue'
 import { useTimelineGrid } from '@/features/timeline/application/useTimelineGrid'
+import QuarterHoverOverlay from './QuarterHoverOverlay.vue'
 import ScalePopover from './ScalePopover.vue'
 import SelectionCard from './selection/SelectionCard.vue'
-import SelectionDialog from './selection/SelectionDialog.vue'
 import SelectionOverlay from './selection/SelectionOverlay.vue'
 import TableColumn from './TableColumn.vue'
 import TimeColumn from './TimeColumn.vue'
+
+const SelectionDialog = defineAsyncComponent(
+  () => import('./selection/SelectionDialog.vue'),
+)
 
 const grid = useTimelineGrid()
 
@@ -15,16 +18,9 @@ const {
   filteredTables,
   selectedDay,
   timeSlots,
-  gridHeight,
-  slotHeight,
-  columnWidth,
-  timeColWidth,
-  headerHeight,
-  scale,
-  quarterHeight,
-  totalQuarters,
   formatTimeSlot,
-  tableLayouts,
+  getTableLayout,
+  layoutVersion,
   currentTimePosition,
   canZoomIn,
   canZoomOut,
@@ -47,71 +43,82 @@ const {
   scalePopoverOpen,
   scalePopoverPosition,
   onTableContextMenu,
-  isHoveredQuarter,
+  virtualizer,
+  gridOffsetLeft,
+  hoverOverlayStyle,
+  tableColumnLayout,
+  timeColumnLayout,
 } = grid
 
-const timeColumnLayout = computed<TimeColumnLayoutProps>(() => ({
-  gridHeight: gridHeight.value,
-  slotHeight: slotHeight.value,
-  scale: scale.value,
-  headerHeight: headerHeight.value,
-  timeColWidth: timeColWidth.value,
-}))
-
-const tableColumnLayout = computed<TableColumnLayoutProps>(() => ({
-  gridHeight: gridHeight.value,
-  slotHeight: slotHeight.value,
-  scale: scale.value,
-  headerHeight: headerHeight.value,
-  quarterHeight: quarterHeight.value,
-  columnWidth: columnWidth.value,
-  totalQuarters: totalQuarters.value,
-  timeSlotsCount: timeSlots.value.length,
-}))
+const {
+  virtualRows,
+  virtualColumns,
+  visibleRowRange,
+  totalWidth,
+  totalScrollHeight,
+} = virtualizer
 </script>
 
 <template>
   <div
     :ref="(el) => { grid.gridContainer.value = el as HTMLElement | null }"
-    class="mt-8 flex min-w-full relative select-none"
+    class="mt-8 flex min-w-full flex-col relative select-none"
     @mousedown="onGridMouseDown"
     @mousemove="onGridMouseMove"
     @mouseup="onGridMouseUp"
   >
-    <TimeColumn
-      :layout="timeColumnLayout"
-      :time-slots="timeSlots"
-      :format-time-slot="formatTimeSlot"
-    />
+    <div
+      class="relative min-w-full"
+      :style="{
+        width: `${totalWidth}px`,
+        height: `${totalScrollHeight}px`,
+      }"
+    >
+      <TimeColumn
+        :layout="timeColumnLayout"
+        :time-slots="timeSlots"
+        :format-time-slot="formatTimeSlot"
+        :virtual-rows="virtualRows"
+      />
 
-    <TableColumn
-      v-for="(table, tableIdx) in filteredTables"
-      :key="table.id"
-      :table="table"
-      :table-idx="tableIdx"
-      :events="tableLayouts.get(table.id) ?? []"
-      :layout="tableColumnLayout"
-      :current-time-position="currentTimePosition"
-      :is-hovered-quarter="isHoveredQuarter"
-      @contextmenu="onTableContextMenu"
-    />
+      <TableColumn
+        v-for="virtualCol in virtualColumns"
+        :key="`${filteredTables[virtualCol.index]?.id ?? virtualCol.index}-${layoutVersion}`"
+        :table="filteredTables[virtualCol.index]!"
+        :events="getTableLayout(filteredTables[virtualCol.index]!.id)"
+        :layout="tableColumnLayout"
+        :current-time-position="currentTimePosition"
+        :visible-row-range="visibleRowRange"
+        :column-left="virtualCol.start - gridOffsetLeft"
+        @contextmenu="onTableContextMenu"
+      />
 
-    <SelectionOverlay
-      v-if="selection && selectionStyle && !selectionConfirmed"
-      :style="selectionStyle"
-    />
+      <QuarterHoverOverlay
+        v-if="hoverOverlayStyle"
+        :visible="hoverOverlayStyle.visible"
+        :left="hoverOverlayStyle.left"
+        :top="hoverOverlayStyle.top"
+        :width="hoverOverlayStyle.width"
+        :height="hoverOverlayStyle.height"
+      />
 
-    <SelectionCard
-      v-if="useInlineCard && selectionStyle && selectionTimeRange"
-      :style="selectionStyle"
-      :time-range="selectionTimeRange"
-      :duration="selectionDuration"
-      :capacity="selectionCapacity"
-      :selected-tables="selectedTables"
-      :selected-day="selectedDay"
-      @confirm="confirmSelection"
-      @cancel="cancelSelection"
-    />
+      <SelectionOverlay
+        v-if="selection && selectionStyle && !selectionConfirmed"
+        :style="selectionStyle"
+      />
+
+      <SelectionCard
+        v-if="useInlineCard && selectionStyle && selectionTimeRange"
+        :style="selectionStyle"
+        :time-range="selectionTimeRange"
+        :duration="selectionDuration"
+        :capacity="selectionCapacity"
+        :selected-tables="selectedTables"
+        :selected-day="selectedDay"
+        @confirm="confirmSelection"
+        @cancel="cancelSelection"
+      />
+    </div>
 
     <Teleport to="body">
       <SelectionDialog

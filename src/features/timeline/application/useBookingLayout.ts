@@ -4,40 +4,61 @@ import { useMemoize } from '@vueuse/core'
 import { computed, toValue } from 'vue'
 import { layoutEventsForTable } from '@/features/timeline/domain/bookingLayout'
 
+function eventsSignature(events: TimelineEvent[]): string {
+  if (!events.length)
+    return ''
+  return events.map(event => `${event.id}:${event.startMinutes}:${event.endMinutes}`).join('|')
+}
+
 export function useBookingLayout(
   filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
   eventsPerTable: ComputedRef<Map<string, TimelineEvent[]>>,
   minutesToPx: (minutes: number) => number,
   columnWidth: MaybeRef<number>,
   indent: MaybeRef<number>,
+  slotHeight: MaybeRef<number>,
 ) {
-  const resolvedColumnWidth = computed(() => toValue(columnWidth))
-  const resolvedIndent = computed(() => toValue(indent))
+  const layoutMetrics = computed(() => ({
+    columnWidth: toValue(columnWidth),
+    indent: toValue(indent),
+    slotHeight: toValue(slotHeight),
+  }))
 
   const layoutEventsForTableMemo = useMemoize(
     (
-      _tableId: string,
+      _cacheKey: string,
+      events: TimelineEvent[],
       columnWidthPx: number,
       indentPx: number,
-      events: TimelineEvent[],
     ) => layoutEventsForTable(events, minutesToPx, columnWidthPx, indentPx),
+    { getKey: cacheKey => cacheKey },
   )
 
+  function getTableLayout(tableId: string): LayoutEvent[] {
+    const events = eventsPerTable.value.get(tableId) ?? []
+    const { columnWidth: columnWidthPx, indent: indentPx, slotHeight: slotHeightPx } = layoutMetrics.value
+    const cacheKey = `${tableId}:${columnWidthPx}:${indentPx}:${slotHeightPx}:${eventsSignature(events)}`
+    return layoutEventsForTableMemo(
+      cacheKey,
+      events,
+      columnWidthPx,
+      indentPx,
+    )
+  }
+
+  /** Меняется при zoom — для :key у TableColumn. */
+  const layoutVersion = computed(
+    () => `${layoutMetrics.value.columnWidth}:${layoutMetrics.value.indent}:${layoutMetrics.value.slotHeight}`,
+  )
+
+  /** @deprecated Используйте getTableLayout; оставлено для совместимости. */
   const tableLayouts = computed(() => {
     const layoutsByTableId = new Map<string, LayoutEvent[]>()
-    const columnWidthPx = resolvedColumnWidth.value
-    const indentPx = resolvedIndent.value
-    const eventsMap = eventsPerTable.value
-
     for (const table of filteredTables.value) {
-      const events = eventsMap.get(table.id) ?? []
-      layoutsByTableId.set(
-        table.id,
-        layoutEventsForTableMemo(table.id, columnWidthPx, indentPx, events),
-      )
+      layoutsByTableId.set(table.id, getTableLayout(table.id))
     }
     return layoutsByTableId
   })
 
-  return { tableLayouts }
+  return { getTableLayout, layoutVersion, tableLayouts }
 }

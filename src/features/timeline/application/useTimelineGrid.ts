@@ -2,15 +2,16 @@ import type { ComputedRef } from 'vue'
 import type { TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import { useScroll } from '@vueuse/core'
 import { computed, ref, toRef, watch } from 'vue'
-import { findScrollableParent } from '@/shared/lib/findScrollableParent'
 import { useBookingLayout } from './useBookingLayout'
 import { useCurrentTime } from './useCurrentTime'
+import { useGridScrollAnchors } from './useGridScrollAnchors'
 import { useGridSelection } from './useGridSelection'
 import { useScalePopover } from './useScalePopover'
 import { useSelectionPresentation } from './useSelectionPresentation'
 import { useTimeGrid } from './useTimeGrid'
 import { useTimelineContext } from './useTimelineContext'
 import { useTimelineScale } from './useTimelineScale'
+import { useTimelineVirtualizer } from './useTimelineVirtualizer'
 import { useTimelineZoomShortcuts } from './useTimelineZoomShortcuts'
 
 /**
@@ -50,12 +51,13 @@ export function useTimelineGrid() {
     formatTimeSlot,
   } = useTimeGrid(openingTime, closingTime, slotHeight)
 
-  const { tableLayouts } = useBookingLayout(
+  const { getTableLayout, layoutVersion } = useBookingLayout(
     filteredTablesRef,
     eventsRef,
     minutesToPx,
     columnWidth,
     indent,
+    slotHeight,
   )
 
   const { currentTimePosition } = useCurrentTime(
@@ -69,11 +71,19 @@ export function useTimelineGrid() {
 
   const gridContainer = ref<HTMLElement | null>(null)
 
-  const scrollTarget = computed(() => findScrollableParent(gridContainer.value))
-  const { y: scrollY, x: scrollX } = useScroll(scrollTarget)
+  const {
+    scrollElement,
+    gridOffsetLeft,
+    rowScrollMargin,
+    colScrollMargin,
+    measureOffsets: measureGridScrollOffsets,
+  } = useGridScrollAnchors(gridContainer, headerHeight, timeColWidth)
+
+  const tableCount = computed(() => filteredTables.value.length)
 
   const selection = useGridSelection(
     gridContainer,
+    scrollElement,
     filteredTablesRef,
     quarterHeight,
     totalQuarters,
@@ -82,6 +92,21 @@ export function useTimelineGrid() {
     timeColWidth,
     headerHeight,
   )
+
+  const virtualizer = useTimelineVirtualizer({
+    scrollElement,
+    tableCount,
+    totalQuarters,
+    columnWidth,
+    quarterHeight,
+    timeColWidth,
+    headerHeight,
+    rowScrollMargin,
+    colScrollMargin,
+    isDragging: selection.isDragging,
+  })
+
+  const { y: scrollY, x: scrollX } = useScroll(scrollElement)
 
   const presentation = useSelectionPresentation(
     selection.selectionConfirmed,
@@ -96,6 +121,10 @@ export function useTimelineGrid() {
       scalePopover.close()
   })
 
+  watch([slotHeight, headerHeight, timeColWidth], () => {
+    measureGridScrollOffsets()
+  })
+
   useTimelineZoomShortcuts(gridContainer, zoomIn, zoomOut)
 
   function onTableContextMenu(mouseEvent: MouseEvent) {
@@ -104,8 +133,47 @@ export function useTimelineGrid() {
     scalePopover.openFromEvent(mouseEvent)
   }
 
+  const hoverOverlayStyle = computed(() => {
+    if (!selection.isHoverActive())
+      return null
+
+    const tableIdx = selection.hoverTableIdx.value
+    const quarter = selection.hoverQuarter.value
+    if (tableIdx < 0 || quarter < 0)
+      return null
+
+    return {
+      visible: true,
+      left: timeColWidth.value + tableIdx * columnWidth.value,
+      top: headerHeight.value + quarter * quarterHeight.value,
+      width: columnWidth.value,
+      height: quarterHeight.value,
+    }
+  })
+
+  const tableColumnLayout = computed(() => ({
+    gridHeight: gridHeight.value,
+    slotHeight: slotHeight.value,
+    scale: scale.value,
+    headerHeight: headerHeight.value,
+    quarterHeight: quarterHeight.value,
+    columnWidth: columnWidth.value,
+    totalQuarters: totalQuarters.value,
+    timeSlotsCount: timeSlots.value.length,
+  }))
+
+  const timeColumnLayout = computed(() => ({
+    gridHeight: gridHeight.value,
+    slotHeight: slotHeight.value,
+    scale: scale.value,
+    headerHeight: headerHeight.value,
+    timeColWidth: timeColWidth.value,
+  }))
+
   return {
     gridContainer,
+    scrollElement,
+    gridOffsetLeft,
     filteredTables,
     selectedDay,
     timeSlots,
@@ -118,12 +186,17 @@ export function useTimelineGrid() {
     quarterHeight,
     totalQuarters,
     formatTimeSlot,
-    tableLayouts,
+    getTableLayout,
+    layoutVersion,
     currentTimePosition,
     canZoomIn,
     canZoomOut,
     zoomIn,
     zoomOut,
+    virtualizer,
+    hoverOverlayStyle,
+    tableColumnLayout,
+    timeColumnLayout,
     ...selection,
     ...presentation,
     scalePopoverOpen: scalePopover.isOpen,

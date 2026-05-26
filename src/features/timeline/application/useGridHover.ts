@@ -33,11 +33,14 @@ export function useGridHover(
   }
 
   function getTableIndexFromClientX(clientX: number): number {
-    if (!gridContainer.value)
+    const grid = gridContainer.value
+    if (!grid)
       return 0
-    const rect = gridContainer.value.getBoundingClientRect()
-    const offsetFromGridLeft = clientX - rect.left + gridContainer.value.scrollLeft
-    const tableColumnIndex = Math.floor((offsetFromGridLeft - resolvedTimeColWidth.value) / resolvedColumnWidth.value)
+    const rect = grid.getBoundingClientRect()
+    const offsetFromGridLeft = clientX - rect.left
+    const tableColumnIndex = Math.floor(
+      (offsetFromGridLeft - resolvedTimeColWidth.value) / resolvedColumnWidth.value,
+    )
     return Math.max(0, Math.min(tableColumnIndex, filteredTables.value.length - 1))
   }
 
@@ -57,8 +60,9 @@ export function useGridHover(
     hoverQuarter.value = getHoverQuarterIndexFromClientY(mouseEvent.clientY, gridBodyElement)
   }
 
-  function isHoveredQuarter(tableIndex: number, quarterIndex: number): boolean {
-    return hoverTableIdx.value === tableIndex && hoverQuarter.value === quarterIndex
+  function clearHover() {
+    hoverTableIdx.value = -1
+    hoverQuarter.value = -1
   }
 
   return {
@@ -66,7 +70,7 @@ export function useGridHover(
     hoverQuarter,
     updateHoverFromEvent,
     getTableIndexFromClientX,
-    isHoveredQuarter,
+    clearHover,
     getGridBody,
   }
 }

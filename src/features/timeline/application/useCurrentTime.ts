@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue'
-import { useNow } from '@vueuse/core'
+import { useDocumentVisibility, useNow } from '@vueuse/core'
 import { computed, toValue } from 'vue'
 import { getMinutesFromMidnight } from '@/shared/lib/restaurantTime'
 
@@ -11,9 +11,13 @@ export function useCurrentTime(
   selectedDay: MaybeRefOrGetter<string>,
   currentDay: MaybeRefOrGetter<string>,
 ) {
+  const visibility = useDocumentVisibility()
   const now = useNow({ interval: 60_000 })
 
   const currentTimePosition = computed(() => {
+    if (visibility.value === 'hidden')
+      return -1
+
     if (toValue(selectedDay) !== toValue(currentDay))
       return -1
 

@@ -6,7 +6,10 @@ import { findScrollableParent } from '@/shared/lib/findScrollableParent'
 /**
  * Средняя кнопка мыши: перетаскивание прокрутки сетки, а не выделение.
  */
-export function useGridPanning(gridContainer: Ref<HTMLElement | null>) {
+export function useGridPanning(
+  gridContainer: Ref<HTMLElement | null>,
+  preferredScrollElement?: Ref<HTMLElement | null>,
+) {
   const isPanning = ref(false)
   const { x: mouseX, y: mouseY } = useMouse({ type: 'client' })
 
@@ -40,7 +43,8 @@ export function useGridPanning(gridContainer: Ref<HTMLElement | null>) {
       return false
 
     mouseEvent.preventDefault()
-    scrollableContainer = findScrollableParent(gridContainer.value)
+    scrollableContainer = preferredScrollElement?.value
+      ?? findScrollableParent(gridContainer.value)
     panStartX = mouseX.value
     panStartY = mouseY.value
     panStartScrollLeft = scrollableContainer.scrollLeft

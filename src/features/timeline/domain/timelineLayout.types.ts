@@ -16,3 +16,8 @@ export interface TableColumnLayoutProps extends TimelineLayoutProps {
 export interface TimeColumnLayoutProps extends TimelineLayoutProps {
   timeColWidth: number
 }
+
+export interface VisibleRowRange {
+  start: number
+  end: number
+}

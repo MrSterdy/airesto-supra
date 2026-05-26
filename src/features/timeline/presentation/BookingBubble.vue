@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import type { LayoutEvent } from '@/features/timeline/domain/timeline.types'
-import { Phone } from '@lucide/vue'
 import { useElementHover } from '@vueuse/core'
-import { useTemplateRef } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import { useScaledTypography } from '@/features/timeline/application/useScaledTypography'
 import { getBadgeColor, getEventColor, getOrderBadgeLabel, getOrderTitle } from '@/shared/constants'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   layoutEvent: LayoutEvent
   scale: number
-}>()
+  enableHover?: boolean
+}>(), {
+  enableHover: true,
+})
 
 const HOVER_Z_INDEX = 1000
 
@@ -18,7 +20,8 @@ const color = getEventColor(event.kind, event.status)
 const badgeColor = getBadgeColor(event.status)
 
 const contentRef = useTemplateRef<HTMLElement>('content')
-const hovered = useElementHover(contentRef)
+const elementHovered = useElementHover(contentRef)
+const hovered = computed(() => props.enableHover && elementHovered.value)
 
 const {
   labelStyle: textStyle,
@@ -35,14 +38,14 @@ const {
     class="absolute rounded overflow-hidden flex pointer-events-none"
     :class="[
       { 'opacity-50': event.cancelled },
-      hovered && 'backdrop-blur-sm',
+      enableHover && hovered && 'backdrop-blur-sm',
     ]"
     :style="{
       top: `${layoutEvent.top}px`,
       height: `${layoutEvent.height}px`,
       left: `${layoutEvent.left}px`,
       width: `${layoutEvent.width}px`,
-      zIndex: hovered ? HOVER_Z_INDEX : layoutEvent.stackIndex,
+      zIndex: enableHover && hovered ? HOVER_Z_INDEX : layoutEvent.stackIndex,
       backgroundColor: color.bg,
     }"
   >
@@ -53,7 +56,7 @@ const {
     <div
       ref="content"
       class="flex-1 min-w-0 pointer-events-auto"
-      :class="hovered ? 'overflow-visible' : 'overflow-hidden'"
+      :class="enableHover && hovered ? 'overflow-visible' : 'overflow-hidden'"
       :style="layoutEvent.contentMaxHeight != null
         ? { maxHeight: `${layoutEvent.contentMaxHeight}px` }
         : undefined"
@@ -92,7 +95,20 @@ const {
           class="flex items-center text-foreground"
           :style="textStyle"
         >
-          <Phone class="shrink-0 mr-0.5" :size="iconSize" />
+          <svg
+            class="shrink-0 mr-0.5"
+            :width="iconSize"
+            :height="iconSize"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+          </svg>
           <span class="truncate">{{ event.phone }}</span>
         </div>
       </div>
