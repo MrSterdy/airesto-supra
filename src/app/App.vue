@@ -29,6 +29,8 @@ provideTimelineContext({
   eventsPerTable,
   openingTime: restaurant.opening_time,
   closingTime: restaurant.closing_time,
+  timeZone: restaurant.timezone,
+  currentDay,
   selectedDay,
 })
 </script>

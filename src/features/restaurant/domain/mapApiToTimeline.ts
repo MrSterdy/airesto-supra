@@ -18,7 +18,8 @@ export function buildReservationSearchIndex(
 
   for (const table of tables) {
     for (const reservation of table.reservations) {
-      if (isoToCalendarDate(reservation.seating_time, timeZone) !== selectedDay)
+      const reservationDay = isoToCalendarDate(reservation.seating_time, timeZone)
+      if (!reservationDay || reservationDay !== selectedDay)
         continue
       reservationSearchEntries.push({
         tableId: table.id,
@@ -42,29 +43,37 @@ export function buildEventsPerTable(
     const events: TimelineEvent[] = []
 
     for (const order of table.orders) {
-      if (isoToCalendarDate(order.start_time, timeZone) !== selectedDay)
+      const orderDay = isoToCalendarDate(order.start_time, timeZone)
+      const startMinutes = isoToMinutesFromMidnight(order.start_time, timeZone)
+      const endMinutes = isoToMinutesFromMidnight(order.end_time, timeZone)
+      if (!orderDay || orderDay !== selectedDay || startMinutes == null || endMinutes == null)
         continue
       events.push({
         id: order.id,
         tableId: table.id,
         kind: 'order',
         status: order.status,
-        startMinutes: isoToMinutesFromMidnight(order.start_time, timeZone),
-        endMinutes: isoToMinutesFromMidnight(order.end_time, timeZone),
+        startMinutes,
+        endMinutes,
         title: getOrderTitle(order.status),
       })
     }
 
     for (const reservation of table.reservations) {
-      if (isoToCalendarDate(reservation.seating_time, timeZone) !== selectedDay)
+      const reservationDay = isoToCalendarDate(reservation.seating_time, timeZone)
+      if (!reservationDay || reservationDay !== selectedDay)
+        continue
+      const startMinutes = isoToMinutesFromMidnight(reservation.seating_time, timeZone)
+      const endMinutes = isoToMinutesFromMidnight(reservation.end_time, timeZone)
+      if (startMinutes == null || endMinutes == null)
         continue
       events.push({
         id: String(reservation.id),
         tableId: table.id,
         kind: 'reservation',
         status: reservation.status,
-        startMinutes: isoToMinutesFromMidnight(reservation.seating_time, timeZone),
-        endMinutes: isoToMinutesFromMidnight(reservation.end_time, timeZone),
+        startMinutes,
+        endMinutes,
         name: reservation.name_for_reservation,
         phone: reservation.phone_number,
         guests: reservation.num_people,

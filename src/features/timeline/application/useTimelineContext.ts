@@ -7,6 +7,8 @@ export interface TimelineContext {
   eventsPerTable: Ref<Map<string, TimelineEvent[]>> | ComputedRef<Map<string, TimelineEvent[]>>
   openingTime: string
   closingTime: string
+  timeZone: string
+  currentDay: string
   selectedDay: Ref<string> | ComputedRef<string>
 }
 

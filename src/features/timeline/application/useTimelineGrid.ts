@@ -21,7 +21,7 @@ export function useTimelineGrid() {
   if (!timeline)
     throw new Error('TimelineGrid requires provideTimelineContext()')
 
-  const { filteredTables, eventsPerTable, openingTime, closingTime, selectedDay } = timeline
+  const { filteredTables, eventsPerTable, openingTime, closingTime, timeZone, currentDay, selectedDay } = timeline
 
   const filteredTablesRef = toRef(() => filteredTables.value)
   const eventsRef = toRef(() => eventsPerTable.value) as ComputedRef<Map<string, TimelineEvent[]>>
@@ -58,7 +58,14 @@ export function useTimelineGrid() {
     indent,
   )
 
-  const { currentTimePosition } = useCurrentTime(startMinutes, endMinutes, minutesToPx)
+  const { currentTimePosition } = useCurrentTime(
+    startMinutes,
+    endMinutes,
+    minutesToPx,
+    timeZone,
+    selectedDay,
+    currentDay,
+  )
 
   const gridContainer = ref<HTMLElement | null>(null)
 
