@@ -1,7 +1,6 @@
-import type { ComputedRef, Ref } from 'vue'
+import type { ComputedRef, MaybeRef, Ref } from 'vue'
 import type { SelectionState, TableInfo } from '@/types'
-import { computed, onUnmounted, ref } from 'vue'
-import { COLUMN_WIDTH } from '@/constants'
+import { computed, onUnmounted, ref, toValue } from 'vue'
 
 function findScrollableParent(el: HTMLElement | null): HTMLElement {
   let parent = el?.parentElement ?? null
@@ -20,10 +19,17 @@ function findScrollableParent(el: HTMLElement | null): HTMLElement {
 export function useGridSelection(
   gridContainer: Ref<HTMLElement | null>,
   filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
-  quarterHeight: number,
+  quarterHeight: MaybeRef<number>,
   totalQuarters: ComputedRef<number>,
   startMinutes: number,
+  columnWidth: MaybeRef<number>,
+  timeColWidth: MaybeRef<number>,
+  headerHeight: MaybeRef<number>,
 ) {
+  const resolvedQuarterHeight = computed(() => toValue(quarterHeight))
+  const resolvedColumnWidth = computed(() => toValue(columnWidth))
+  const resolvedTimeColWidth = computed(() => toValue(timeColWidth))
+  const resolvedHeaderHeight = computed(() => toValue(headerHeight))
   const isDragging = ref(false)
   const isPanning = ref(false)
   const selection = ref<SelectionState | null>(null)
@@ -63,24 +69,24 @@ export function useGridSelection(
       return 0
     const rect = gridContainer.value.getBoundingClientRect()
     const x = clientX - rect.left + gridContainer.value.scrollLeft
-    const timeColWidth = 52
-    const colIdx = Math.floor((x - timeColWidth) / COLUMN_WIDTH)
+    const colIdx = Math.floor((x - resolvedTimeColWidth.value) / resolvedColumnWidth.value)
     return Math.max(0, Math.min(colIdx, filteredTables.value.length - 1))
   }
 
   function getQuarterFromY(clientY: number, bodyEl: HTMLElement, snap: 'floor' | 'round' = 'round'): number {
     const rect = bodyEl.getBoundingClientRect()
     const y = clientY - rect.top
+    const qHeight = resolvedQuarterHeight.value
     const quarter = snap === 'floor'
-      ? Math.floor(y / quarterHeight)
-      : Math.round(y / quarterHeight)
+      ? Math.floor(y / qHeight)
+      : Math.round(y / qHeight)
     return Math.max(0, Math.min(quarter, totalQuarters.value))
   }
 
   function getHoverQuarterFromY(clientY: number, bodyEl: HTMLElement): number {
     const rect = bodyEl.getBoundingClientRect()
     const y = clientY - rect.top
-    const quarter = Math.floor(y / quarterHeight)
+    const quarter = Math.floor(y / resolvedQuarterHeight.value)
     return Math.max(0, Math.min(quarter, totalQuarters.value - 1))
   }
 
@@ -190,11 +196,10 @@ export function useGridSelection(
     if (!normalizedSelection.value)
       return null
     const { minTableIdx, maxTableIdx, minQuarter, maxQuarter } = normalizedSelection.value
-    const timeColWidth = 52
-    const left = timeColWidth + minTableIdx * COLUMN_WIDTH
-    const width = (maxTableIdx - minTableIdx + 1) * COLUMN_WIDTH
-    const top = 48 + minQuarter * quarterHeight
-    const height = (maxQuarter - minQuarter) * quarterHeight
+    const left = resolvedTimeColWidth.value + minTableIdx * resolvedColumnWidth.value
+    const width = (maxTableIdx - minTableIdx + 1) * resolvedColumnWidth.value
+    const top = resolvedHeaderHeight.value + minQuarter * resolvedQuarterHeight.value
+    const height = (maxQuarter - minQuarter) * resolvedQuarterHeight.value
     return { left: `${left}px`, width: `${width}px`, top: `${top}px`, height: `${height}px` }
   })
 
@@ -259,6 +264,11 @@ export function useGridSelection(
     selection.value = null
   }
 
+  function clearSelection() {
+    isDragging.value = false
+    cancelSelection()
+  }
+
   function isHoveredQuarter(tableIdx: number, quarter: number): boolean {
     if (isDragging.value || selectionConfirmed.value)
       return false
@@ -283,6 +293,7 @@ export function useGridSelection(
     onGridMouseLeave,
     confirmSelection,
     cancelSelection,
+    clearSelection,
     isHoveredQuarter,
   }
 }

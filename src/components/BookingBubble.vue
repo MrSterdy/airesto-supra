@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { LayoutEvent } from '@/types'
 import { Phone } from '@lucide/vue'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { getBadgeColor, getEventColor, getOrderBadgeLabel, getOrderTitle } from '@/constants'
 
-const props = defineProps<{ layoutEvent: LayoutEvent }>()
+const props = defineProps<{
+  layoutEvent: LayoutEvent
+  scale: number
+}>()
 
 const HOVER_Z_INDEX = 1000
 
@@ -12,6 +15,22 @@ const event = props.layoutEvent.event
 const color = getEventColor(event.kind, event.status)
 const badgeColor = getBadgeColor(event.status)
 const hovered = ref(false)
+
+const textStyle = computed(() => ({
+  fontSize: `${11 * props.scale}px`,
+  lineHeight: `${14 * props.scale}px`,
+}))
+
+const badgeStyle = computed(() => ({
+  fontSize: `${8 * props.scale}px`,
+  lineHeight: `${8 * props.scale}px`,
+  padding: `${1 * props.scale}px ${2 * props.scale}px`,
+}))
+
+const iconSize = computed(() => 10 * props.scale)
+const contentPadding = computed(() => 2 * props.scale)
+const contentGap = computed(() => 2 * props.scale)
+const borderWidth = computed(() => Math.max(1, 2 * props.scale))
 </script>
 
 <template>
@@ -30,7 +49,10 @@ const hovered = ref(false)
       backgroundColor: color.bg,
     }"
   >
-    <div class="w-0.5 shrink-0 h-full" :style="{ backgroundColor: color.border }" />
+    <div
+      class="shrink-0 h-full"
+      :style="{ width: `${borderWidth}px`, backgroundColor: color.border }"
+    />
     <div
       class="flex-1 min-w-0 pointer-events-auto"
       :class="hovered ? 'overflow-visible' : 'overflow-hidden'"
@@ -40,33 +62,41 @@ const hovered = ref(false)
       @mouseenter="hovered = true"
       @mouseleave="hovered = false"
     >
-      <div class="flex flex-col gap-0.5 p-0.5 pointer-events-none">
+      <div
+        class="flex flex-col pointer-events-none"
+        :style="{ gap: `${contentGap}px`, padding: `${contentPadding}px` }"
+      >
         <span
           v-if="event.kind === 'order'"
-          class="text-[11px] leading-[14px] font-semibold text-foreground truncate"
+          class="font-semibold text-foreground truncate"
+          :style="textStyle"
         >
           {{ getOrderTitle(event.status) }}
         </span>
 
         <template v-if="event.kind === 'reservation'">
-          <div class="flex flex-wrap gap-0.5 text-[11px] leading-[14px] font-semibold text-foreground min-w-0">
+          <div
+            class="flex flex-wrap font-semibold text-foreground min-w-0"
+            :style="{ ...textStyle, gap: `${contentGap}px` }"
+          >
             <span class="truncate">{{ event.name }};</span>
             <span>{{ event.guests }}&nbsp;<span class="font-normal">чел</span></span>
           </div>
         </template>
 
         <span
-          class="self-start rounded px-0.5 py-px text-[8px] leading-[8px] font-semibold truncate max-w-full"
-          :style="{ backgroundColor: badgeColor.bg, color: badgeColor.text }"
+          class="self-start rounded font-semibold truncate max-w-full"
+          :style="{ ...badgeStyle, backgroundColor: badgeColor.bg, color: badgeColor.text }"
         >
           {{ event.kind === 'order' ? getOrderBadgeLabel(event.status) : event.status }}
         </span>
 
         <div
           v-if="event.phone"
-          class="flex items-center gap-0 text-[11px] leading-[14px] text-foreground"
+          class="flex items-center text-foreground"
+          :style="textStyle"
         >
-          <Phone class="size-2.5 shrink-0 mr-0.5" />
+          <Phone class="shrink-0 mr-0.5" :size="iconSize" />
           <span class="truncate">{{ event.phone }}</span>
         </div>
       </div>

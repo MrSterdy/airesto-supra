@@ -26,7 +26,7 @@ function formatDay(dateStr: string) {
 
 <template>
   <div
-    class="absolute z-50 rounded-lg bg-card border border-border shadow-lg flex flex-col overflow-hidden"
+    class="absolute z-9999 rounded-lg bg-card border border-border shadow-lg flex flex-col overflow-hidden"
     :style="style"
   >
     <div class="flex-1 p-3 flex flex-col gap-1 overflow-auto">

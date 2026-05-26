@@ -5,7 +5,11 @@ import { computed, ref } from 'vue'
 import { useBookingLayout } from '@/composables/useBookingLayout'
 import { useCurrentTime } from '@/composables/useCurrentTime'
 import { useGridSelection } from '@/composables/useGridSelection'
+import { useScalePopover } from '@/composables/useScalePopover'
 import { useTimeGrid } from '@/composables/useTimeGrid'
+import { useTimelineScale } from '@/composables/useTimelineScale'
+import { useTimelineZoomShortcuts } from '@/composables/useTimelineZoomShortcuts'
+import ScalePopover from './ScalePopover.vue'
 import SelectionCard from './SelectionCard.vue'
 import SelectionOverlay from './SelectionOverlay.vue'
 import TableColumn from './TableColumn.vue'
@@ -23,6 +27,19 @@ const filteredTablesRef = computed(() => props.filteredTables)
 const eventsRef = computed(() => props.eventsPerTable)
 
 const {
+  scale,
+  canZoomIn,
+  canZoomOut,
+  slotHeight,
+  columnWidth,
+  timeColWidth,
+  headerHeight,
+  indent,
+  zoomIn,
+  zoomOut,
+} = useTimelineScale()
+
+const {
   startMinutes,
   endMinutes,
   timeSlots,
@@ -31,12 +48,14 @@ const {
   totalQuarters,
   minutesToPx,
   formatTimeSlot,
-} = useTimeGrid(props.openingTime, props.closingTime)
+} = useTimeGrid(props.openingTime, props.closingTime, slotHeight)
 
 const { tableLayouts } = useBookingLayout(
   filteredTablesRef,
   eventsRef as ComputedRef<Map<string, TimelineEvent[]>>,
   minutesToPx,
+  columnWidth,
+  indent,
 )
 
 const { currentTimePosition } = useCurrentTime(startMinutes, endMinutes, minutesToPx)
@@ -57,8 +76,36 @@ const {
   onGridMouseLeave,
   confirmSelection,
   cancelSelection,
+  clearSelection,
   isHoveredQuarter,
-} = useGridSelection(gridContainer, filteredTablesRef, quarterHeight, totalQuarters, startMinutes)
+} = useGridSelection(
+  gridContainer,
+  filteredTablesRef,
+  quarterHeight,
+  totalQuarters,
+  startMinutes,
+  columnWidth,
+  timeColWidth,
+  headerHeight,
+)
+
+const { isOpen: scalePopoverOpen, position: scalePopoverPosition, popoverRef, openFromEvent } = useScalePopover()
+
+useTimelineZoomShortcuts(gridContainer, zoomIn, zoomOut)
+
+function onTableContextMenu(e: MouseEvent) {
+  e.preventDefault()
+  clearSelection()
+  openFromEvent(e)
+}
+
+function handleZoomIn() {
+  zoomIn()
+}
+
+function handleZoomOut() {
+  zoomOut()
+}
 </script>
 
 <template>
@@ -73,6 +120,10 @@ const {
     <TimeColumn
       :time-slots="timeSlots"
       :grid-height="gridHeight"
+      :slot-height="slotHeight"
+      :time-col-width="timeColWidth"
+      :header-height="headerHeight"
+      :scale="scale"
       :format-time-slot="formatTimeSlot"
     />
 
@@ -83,11 +134,16 @@ const {
       :table-idx="tableIdx"
       :events="tableLayouts.get(table.id) ?? []"
       :grid-height="gridHeight"
+      :slot-height="slotHeight"
       :time-slots-count="timeSlots.length"
       :total-quarters="totalQuarters"
       :quarter-height="quarterHeight"
+      :column-width="columnWidth"
+      :header-height="headerHeight"
+      :scale="scale"
       :current-time-position="currentTimePosition"
       :is-hovered-quarter="isHoveredQuarter"
+      @contextmenu="onTableContextMenu"
     />
 
     <SelectionOverlay
@@ -106,5 +162,18 @@ const {
       @confirm="confirmSelection"
       @cancel="cancelSelection"
     />
+
+    <Teleport to="body">
+      <ScalePopover
+        v-if="scalePopoverOpen"
+        ref="popoverRef"
+        :x="scalePopoverPosition.x"
+        :y="scalePopoverPosition.y"
+        :can-zoom-in="canZoomIn"
+        :can-zoom-out="canZoomOut"
+        @zoom-in="handleZoomIn"
+        @zoom-out="handleZoomOut"
+      />
+    </Teleport>
   </div>
 </template>

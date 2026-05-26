@@ -1,14 +1,16 @@
-import { computed } from 'vue'
-import { SLOT_HEIGHT } from '@/constants'
+import type { MaybeRef } from 'vue'
+import { computed, toValue } from 'vue'
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number)
   return h * 60 + m
 }
 
-export function useTimeGrid(openingTime: string, closingTime: string) {
+export function useTimeGrid(openingTime: string, closingTime: string, slotHeight: MaybeRef<number>) {
   const startMinutes = timeToMinutes(openingTime)
   const endMinutes = timeToMinutes(closingTime)
+
+  const resolvedSlotHeight = computed(() => toValue(slotHeight))
 
   const timeSlots = computed(() => {
     const slots: string[] = []
@@ -26,13 +28,13 @@ export function useTimeGrid(openingTime: string, closingTime: string) {
     return slots
   })
 
-  const gridHeight = computed(() => (timeSlots.value.length - 1) * SLOT_HEIGHT)
+  const gridHeight = computed(() => (timeSlots.value.length - 1) * resolvedSlotHeight.value)
 
-  const quarterHeight = SLOT_HEIGHT / 2
+  const quarterHeight = computed(() => resolvedSlotHeight.value / 2)
   const totalQuarters = computed(() => (timeSlots.value.length - 1) * 2)
 
   function minutesToPx(min: number): number {
-    return ((min - startMinutes) / 30) * SLOT_HEIGHT
+    return ((min - startMinutes) / 30) * resolvedSlotHeight.value
   }
 
   function formatTimeSlot(slot: string): string {
@@ -62,5 +64,6 @@ export function useTimeGrid(openingTime: string, closingTime: string) {
     formatTimeSlot,
     quarterToTime,
     minutesFromTime,
+    slotHeight: resolvedSlotHeight,
   }
 }

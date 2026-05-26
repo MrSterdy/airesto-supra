@@ -1,7 +1,7 @@
-import type { ComputedRef, Ref } from 'vue'
+import type { ComputedRef, MaybeRef, Ref } from 'vue'
 import type { LayoutEvent, TableInfo, TimelineEvent } from '@/types'
-import { computed } from 'vue'
-import { COLUMN_WIDTH, INDENT, INTERSECTION_THRESHOLD } from '@/constants'
+import { computed, toValue } from 'vue'
+import { INTERSECTION_THRESHOLD } from '@/constants'
 
 interface LayoutItem {
   event: TimelineEvent
@@ -18,8 +18,15 @@ export function useBookingLayout(
   filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
   eventsPerTable: ComputedRef<Map<string, TimelineEvent[]>>,
   minutesToPx: (min: number) => number,
+  columnWidth: MaybeRef<number>,
+  indent: MaybeRef<number>,
 ) {
+  const resolvedColumnWidth = computed(() => toValue(columnWidth))
+  const resolvedIndent = computed(() => toValue(indent))
+
   function layoutEventsForTable(tableId: string): LayoutEvent[] {
+    const colWidth = resolvedColumnWidth.value
+    const colIndent = resolvedIndent.value
     const events = eventsPerTable.value.get(tableId)
     if (!events || !events.length)
       return []
@@ -36,7 +43,7 @@ export function useBookingLayout(
       top: minutesToPx(e.startMinutes),
       height: minutesToPx(e.endMinutes) - minutesToPx(e.startMinutes),
       left: 0,
-      width: COLUMN_WIDTH,
+      width: colWidth,
       startMin: e.startMinutes,
       endMin: e.endMinutes,
     }))
@@ -48,10 +55,10 @@ export function useBookingLayout(
         continue
 
       const clusters = buildIntersectionClusters(items, group)
-      applyClusterLayout(items, clusters)
+      applyClusterLayout(items, clusters, colWidth, colIndent)
     }
 
-    applyContentOcclusion(items)
+    applyContentOcclusion(items, colIndent)
 
     return items.map((e, stackIndex) => ({
       event: e.event,
@@ -132,7 +139,9 @@ function rectsOverlapVertically(a: LayoutItem, b: LayoutItem): boolean {
   return a.top < b.top + b.height && b.top < a.top + a.height
 }
 
-function applyContentOcclusion(items: LayoutItem[]): void {
+function applyContentOcclusion(items: LayoutItem[], indent: number): void {
+  const occlusionGap = indent + 1
+
   for (let i = 0; i < items.length; i++) {
     let contentMaxHeight = items[i].height
 
@@ -146,7 +155,7 @@ function applyContentOcclusion(items: LayoutItem[]): void {
       const itemTop = items[i].top
 
       if (occluderTop > itemTop) {
-        contentMaxHeight = Math.min(contentMaxHeight, occluderTop - itemTop - 5)
+        contentMaxHeight = Math.min(contentMaxHeight, occluderTop - itemTop - occlusionGap)
       }
     }
 
@@ -156,7 +165,12 @@ function applyContentOcclusion(items: LayoutItem[]): void {
   }
 }
 
-function applyClusterLayout(items: LayoutItem[], clusters: number[][]): void {
+function applyClusterLayout(
+  items: LayoutItem[],
+  clusters: number[][],
+  columnWidth: number,
+  indent: number,
+): void {
   const placed: { leftBase: number, maxEnd: number }[] = []
 
   for (const cluster of clusters) {
@@ -170,8 +184,8 @@ function applyClusterLayout(items: LayoutItem[], clusters: number[][]): void {
       }
     }
 
-    const leftBase = maxActiveLeft >= 0 ? maxActiveLeft + INDENT : 0
-    const availableWidth = COLUMN_WIDTH - leftBase
+    const leftBase = maxActiveLeft >= 0 ? maxActiveLeft + indent : 0
+    const availableWidth = columnWidth - leftBase
     const numColumns = cluster.length
 
     for (let c = 0; c < cluster.length; c++) {
