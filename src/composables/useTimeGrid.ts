@@ -15,8 +15,13 @@ export function useTimeGrid(openingTime: string, closingTime: string) {
     const startH = Math.floor(startMinutes / 60)
     const endH = Math.ceil(endMinutes / 60)
     for (let h = startH; h <= endH; h++) {
-      slots.push(`${h}:00`)
-      slots.push(`${h}:30`)
+      if (h === 24) {
+        slots.push('00:00')
+      }
+      else {
+        slots.push(`${h}:00`)
+        slots.push(`${h}:30`)
+      }
     }
     return slots
   })
