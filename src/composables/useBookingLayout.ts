@@ -11,6 +11,7 @@ interface LayoutItem {
   width: number
   startMin: number
   endMin: number
+  contentMaxHeight?: number
 }
 
 export function useBookingLayout(
@@ -50,12 +51,16 @@ export function useBookingLayout(
       applyClusterLayout(items, clusters)
     }
 
-    return items.map(e => ({
+    applyContentOcclusion(items)
+
+    return items.map((e, stackIndex) => ({
       event: e.event,
       top: e.top,
       height: e.height,
       left: e.left,
       width: e.width,
+      contentMaxHeight: e.contentMaxHeight,
+      stackIndex,
     }))
   }
 
@@ -117,6 +122,38 @@ function buildIntersectionClusters(items: LayoutItem[], group: number[]): number
   clusters.push(currentCluster)
 
   return clusters
+}
+
+function rectsOverlapHorizontally(a: LayoutItem, b: LayoutItem): boolean {
+  return a.left < b.left + b.width && b.left < a.left + a.width
+}
+
+function rectsOverlapVertically(a: LayoutItem, b: LayoutItem): boolean {
+  return a.top < b.top + b.height && b.top < a.top + a.height
+}
+
+function applyContentOcclusion(items: LayoutItem[]): void {
+  for (let i = 0; i < items.length; i++) {
+    let contentMaxHeight = items[i].height
+
+    for (let j = i + 1; j < items.length; j++) {
+      if (!rectsOverlapHorizontally(items[i], items[j]))
+        continue
+      if (!rectsOverlapVertically(items[i], items[j]))
+        continue
+
+      const occluderTop = items[j].top
+      const itemTop = items[i].top
+
+      if (occluderTop > itemTop) {
+        contentMaxHeight = Math.min(contentMaxHeight, occluderTop - itemTop - 5)
+      }
+    }
+
+    if (contentMaxHeight < items[i].height) {
+      items[i].contentMaxHeight = contentMaxHeight
+    }
+  }
 }
 
 function applyClusterLayout(items: LayoutItem[], clusters: number[][]): void {

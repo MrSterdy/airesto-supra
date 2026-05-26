@@ -61,6 +61,8 @@ export interface LayoutEvent {
   height: number
   left: number
   width: number
+  contentMaxHeight?: number
+  stackIndex: number
 }
 
 export interface SelectionState {

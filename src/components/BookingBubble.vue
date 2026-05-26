@@ -19,11 +19,17 @@ const badgeColor = getBadgeColor(event.status)
       height: `${layoutEvent.height}px`,
       left: `${layoutEvent.left}px`,
       width: `${layoutEvent.width}px`,
+      zIndex: layoutEvent.stackIndex,
       backgroundColor: color.bg,
     }"
   >
     <div class="w-0.5 shrink-0 h-full" :style="{ backgroundColor: color.border }" />
-    <div class="flex-1 flex flex-col gap-0.5 p-0.5 overflow-hidden min-w-0">
+    <div
+      class="flex-1 flex flex-col gap-0.5 p-0.5 overflow-hidden min-w-0"
+      :style="layoutEvent.contentMaxHeight != null
+        ? { maxHeight: `${layoutEvent.contentMaxHeight}px` }
+        : undefined"
+    >
       <span
         v-if="event.kind === 'order'"
         class="text-[11px] leading-[14px] font-semibold text-foreground truncate"
