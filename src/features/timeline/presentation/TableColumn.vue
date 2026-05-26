@@ -43,11 +43,11 @@ function onContextMenu(mouseEvent: MouseEvent) {
       :style="{ height: `${layout.headerHeight}px` }"
     >
       <div class="flex items-center gap-1" :style="labelStyle">
-        <span class="text-foreground/64">#</span>
+        <span class="text-muted-foreground">#</span>
         <span class="font-semibold" :style="titleStyle">{{ table.number }}</span>
-        <span class="text-foreground/64">{{ table.capacity }} чел</span>
+        <span class="text-muted-foreground">{{ table.capacity }} чел</span>
       </div>
-      <span class="text-foreground/64" :style="labelStyle">{{ table.zone }}</span>
+      <span class="text-muted-foreground" :style="labelStyle">{{ table.zone }}</span>
     </div>
 
     <div class="relative" :style="{ height: `${layout.gridHeight}px` }">

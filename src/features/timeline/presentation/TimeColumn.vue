@@ -21,7 +21,7 @@ const { labelStyle, timeLabelOffset } = useScaledTypography(() => props.layout.s
       <div
         v-for="(slot, index) in timeSlots"
         :key="slot"
-        class="absolute flex items-start justify-center text-foreground/48"
+        class="absolute flex items-start justify-center text-muted-foreground"
         :style="{
           top: `${index * layout.slotHeight - timeLabelOffset}px`,
           width: `${layout.timeColWidth}px`,
