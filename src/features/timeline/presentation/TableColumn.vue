@@ -5,6 +5,10 @@ import { computed } from 'vue'
 import { useScaledTypography } from '@/features/timeline/application/useScaledTypography'
 import { isLayoutEventInRowRange } from '@/features/timeline/domain/visibleRange'
 import BookingBubble from './BookingBubble.vue'
+import {
+  TIMELINE_GRID_COLUMN_SEPARATOR,
+  timelineHorizontalGridBackground,
+} from './timelineGridLines'
 
 const props = defineProps<{
   table: TableInfo
@@ -21,10 +25,9 @@ const emit = defineEmits<{
 
 const { labelStyle, titleStyle } = useScaledTypography(() => props.layout.scale)
 
-const gridLineBackground = computed(() => {
-  const slotHeight = props.layout.slotHeight
-  return `repeating-linear-gradient(to bottom, color-mix(in oklch, var(--foreground) 8%, transparent) 0, color-mix(in oklch, var(--foreground) 8%, transparent) 1px, transparent 1px, transparent ${slotHeight}px)`
-})
+const gridLineBackground = computed(() =>
+  timelineHorizontalGridBackground(props.layout.slotHeight),
+)
 
 const visibleEvents = computed(() =>
   props.events.filter(event =>
@@ -52,6 +55,7 @@ function onContextMenu(mouseEvent: MouseEvent) {
       left: `${columnLeft}px`,
       width: `${layout.columnWidth}px`,
       height: `${layout.headerHeight + layout.gridHeight}px`,
+      boxShadow: TIMELINE_GRID_COLUMN_SEPARATOR,
     }"
     @contextmenu="onContextMenu"
   >

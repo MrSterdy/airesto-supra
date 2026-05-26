@@ -3,6 +3,7 @@ import type { VirtualItem } from '@tanstack/vue-virtual'
 import type { TimeColumnLayoutProps } from '@/features/timeline/domain/timelineLayout.types'
 import { computed } from 'vue'
 import { useScaledTypography } from '@/features/timeline/application/useScaledTypography'
+import { TIMELINE_GRID_COLUMN_SEPARATOR } from './timelineGridLines'
 
 const props = defineProps<{
   layout: TimeColumnLayoutProps
@@ -30,7 +31,10 @@ const slotIndicesInView = computed(() => {
 <template>
   <div
     class="sticky left-0 z-40 bg-background shrink-0 flex flex-col"
-    :style="{ width: `${layout.timeColWidth}px` }"
+    :style="{
+      width: `${layout.timeColWidth}px`,
+      boxShadow: TIMELINE_GRID_COLUMN_SEPARATOR,
+    }"
   >
     <div
       class="sticky top-0 z-20 bg-background shrink-0"
