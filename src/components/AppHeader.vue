@@ -2,7 +2,7 @@
 import { LogOut, Moon, Search, Sun } from '@lucide/vue'
 import { useTemplateRef } from 'vue'
 import { useSearchFocusShortcut } from '@/composables/useSearchFocusShortcut'
-import { useTheme } from '@/composables/useTheme'
+import { useUiPreferences } from '@/composables/useUiPreferences'
 import { Button } from './ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from './ui/input-group'
 
@@ -21,7 +21,7 @@ function getSearchInput(): HTMLInputElement | null {
 
 useSearchFocusShortcut(getSearchInput)
 
-const { isDark, toggle: toggleTheme } = useTheme()
+const { isDark, toggleTheme } = useUiPreferences()
 </script>
 
 <template>

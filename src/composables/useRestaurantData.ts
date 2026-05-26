@@ -1,5 +1,6 @@
 import type { TableInfo, TimelineEvent } from '@/types'
 import { computed, ref } from 'vue'
+import { applyPreferencesContext, useUiPreferences } from '@/composables/useUiPreferences'
 import { mockData } from '@/data/mock'
 
 function isoToMinutes(iso: string): number {
@@ -19,10 +20,6 @@ export function useRestaurantData() {
   const availableDays = data.available_days
   const currentDay = data.current_day
 
-  const selectedDay = ref(currentDay)
-  const selectedZones = ref<string[]>([])
-  const searchQuery = ref('')
-
   const zones = computed(() => {
     const set = new Set<string>()
     for (const t of data.tables) {
@@ -30,6 +27,15 @@ export function useRestaurantData() {
     }
     return Array.from(set)
   })
+
+  applyPreferencesContext({
+    currentDay,
+    availableDays,
+    zones: zones.value,
+  })
+
+  const { selectedDay, selectedZones } = useUiPreferences()
+  const searchQuery = ref('')
 
   function tableMatchesSearch(table: (typeof data.tables)[number], query: string, day: string): boolean {
     return table.reservations.some(
@@ -42,8 +48,8 @@ export function useRestaurantData() {
   const visibleTables = computed(() => {
     let tables = data.tables
     if (selectedZones.value.length > 0) {
-      const zones = new Set(selectedZones.value)
-      tables = tables.filter(t => zones.has(t.zone))
+      const zoneFilter = new Set(selectedZones.value)
+      tables = tables.filter(t => zoneFilter.has(t.zone))
     }
     const query = searchQuery.value.trim().toLowerCase()
     if (query) {

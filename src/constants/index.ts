@@ -1,3 +1,5 @@
+export const SCALE_LEVELS = [0.75, 1, 1.25, 1.5, 1.75] as const
+
 export const SLOT_HEIGHT = 40
 export const COLUMN_WIDTH = 80
 export const INDENT = 4

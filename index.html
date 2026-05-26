@@ -6,13 +6,9 @@
   <script>
     (function () {
       try {
-        const stored = localStorage.getItem('airesto-theme')
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-        const isDark =
-          stored === 'dark' ? true
-          : stored === 'light' ? false
-            : stored === 'auto' ? prefersDark
-              : true
+        const raw = localStorage.getItem('airesto-ui')
+        const parsed = raw ? JSON.parse(raw) : null
+        const isDark = parsed?.theme === 'light' ? false : true
         document.documentElement.classList.toggle('dark', isDark)
       }
       catch {}
