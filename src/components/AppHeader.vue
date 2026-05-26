@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { LogOut, Search, Sun } from '@lucide/vue'
+import { LogOut, Moon, Search, Sun } from '@lucide/vue'
 import { useTemplateRef } from 'vue'
 import { useSearchFocusShortcut } from '@/composables/useSearchFocusShortcut'
+import { useTheme } from '@/composables/useTheme'
 import { Button } from './ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from './ui/input-group'
 
@@ -19,6 +20,8 @@ function getSearchInput(): HTMLInputElement | null {
 }
 
 useSearchFocusShortcut(getSearchInput)
+
+const { isDark, toggle: toggleTheme } = useTheme()
 </script>
 
 <template>
@@ -36,8 +39,15 @@ useSearchFocusShortcut(getSearchInput)
           <Search class="size-4" stroke-width="1" />
         </InputGroupAddon>
       </InputGroup>
-      <Button size="icon-sm" variant="outline" class="border-none">
-        <Sun />
+      <Button
+        size="icon-sm"
+        variant="outline"
+        class="border-none"
+        :aria-label="isDark ? 'Включить светлую тему' : 'Включить тёмную тему'"
+        @click="toggleTheme()"
+      >
+        <Sun v-if="isDark" />
+        <Moon v-else />
       </Button>
       <Button size="sm" variant="outline" class="border-none">
         <LogOut />

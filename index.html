@@ -1,8 +1,23 @@
 <!doctype html>
-<html lang="ru" class="dark">
+<html lang="ru">
 
 <head>
   <meta charset="UTF-8" />
+  <script>
+    (function () {
+      try {
+        const stored = localStorage.getItem('airesto-theme')
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        const isDark =
+          stored === 'dark' ? true
+          : stored === 'light' ? false
+            : stored === 'auto' ? prefersDark
+              : true
+        document.documentElement.classList.toggle('dark', isDark)
+      }
+      catch {}
+    })()
+  </script>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>airesto-supra</title>
