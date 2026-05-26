@@ -6,11 +6,13 @@ import { useBookingLayout } from '@/composables/useBookingLayout'
 import { useCurrentTime } from '@/composables/useCurrentTime'
 import { useGridSelection } from '@/composables/useGridSelection'
 import { useScalePopover } from '@/composables/useScalePopover'
+import { useSelectionPresentation } from '@/composables/useSelectionPresentation'
 import { useTimeGrid } from '@/composables/useTimeGrid'
 import { useTimelineScale } from '@/composables/useTimelineScale'
 import { useTimelineZoomShortcuts } from '@/composables/useTimelineZoomShortcuts'
 import ScalePopover from './ScalePopover.vue'
 import SelectionCard from './SelectionCard.vue'
+import SelectionDialog from './SelectionDialog.vue'
 import SelectionOverlay from './SelectionOverlay.vue'
 import TableColumn from './TableColumn.vue'
 import TimeColumn from './TimeColumn.vue'
@@ -89,6 +91,12 @@ const {
   headerHeight,
 )
 
+const { useInlineCard, useDialog } = useSelectionPresentation(
+  selectionConfirmed,
+  selectionStyle,
+  scale,
+)
+
 const { isOpen: scalePopoverOpen, position: scalePopoverPosition, popoverRef, openFromEvent } = useScalePopover()
 
 useTimelineZoomShortcuts(gridContainer, zoomIn, zoomOut)
@@ -152,7 +160,7 @@ function handleZoomOut() {
     />
 
     <SelectionCard
-      v-if="selectionConfirmed && selectionStyle && selectionTimeRange"
+      v-if="useInlineCard && selectionStyle && selectionTimeRange"
       :style="selectionStyle"
       :time-range="selectionTimeRange"
       :duration="selectionDuration"
@@ -164,6 +172,17 @@ function handleZoomOut() {
     />
 
     <Teleport to="body">
+      <SelectionDialog
+        v-if="useDialog && selectionTimeRange"
+        :open="useDialog"
+        :time-range="selectionTimeRange"
+        :duration="selectionDuration"
+        :capacity="selectionCapacity"
+        :selected-tables="selectedTables"
+        :selected-day="selectedDay"
+        @confirm="confirmSelection"
+        @cancel="cancelSelection"
+      />
       <ScalePopover
         v-if="scalePopoverOpen"
         ref="popoverRef"
