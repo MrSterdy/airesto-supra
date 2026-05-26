@@ -17,6 +17,7 @@ const emit = defineEmits<{
   <div
     class="absolute z-9999 rounded-lg bg-card border border-border shadow-lg flex flex-col overflow-hidden"
     :style="boxStyle"
+    @mousedown.stop
   >
     <div class="flex-1 p-3 flex flex-col gap-1 overflow-auto">
       <p class="font-semibold text-sm">
