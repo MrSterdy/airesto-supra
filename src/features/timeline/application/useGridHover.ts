@@ -1,21 +1,15 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue'
-import type { TableInfo } from '@/features/timeline/domain/timeline.types'
+import type { Ref } from 'vue'
+import type { useGridCoordinates } from './useGridCoordinates'
 import { useMouseInElement } from '@vueuse/core'
-import { computed, ref, toValue, watch } from 'vue'
+import { ref, watch } from 'vue'
+
+type GridCoordinates = ReturnType<typeof useGridCoordinates>
 
 /** Подсветка слота под курсором. */
 export function useGridHover(
   gridContainer: Ref<HTMLElement | null>,
-  filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
-  quarterHeightPx: MaybeRef<number>,
-  totalQuarters: ComputedRef<number>,
-  columnWidthPx: MaybeRef<number>,
-  timeColumnWidthPx: MaybeRef<number>,
+  coordinates: GridCoordinates,
 ) {
-  const resolvedQuarterHeight = computed(() => toValue(quarterHeightPx))
-  const resolvedColumnWidth = computed(() => toValue(columnWidthPx))
-  const resolvedTimeColWidth = computed(() => toValue(timeColumnWidthPx))
-
   const hoverTableIdx = ref(-1)
   const hoverQuarter = ref(-1)
 
@@ -28,36 +22,18 @@ export function useGridHover(
     }
   })
 
-  function getGridBody(): HTMLElement | null {
-    return (gridContainer.value as HTMLElement | null)?.querySelector('[data-grid-body]') as HTMLElement | null
-  }
-
-  function getTableIndexFromClientX(clientX: number): number {
-    const grid = gridContainer.value
-    if (!grid)
-      return 0
-    const rect = grid.getBoundingClientRect()
-    const offsetFromGridLeft = clientX - rect.left
-    const tableColumnIndex = Math.floor(
-      (offsetFromGridLeft - resolvedTimeColWidth.value) / resolvedColumnWidth.value,
-    )
-    return Math.max(0, Math.min(tableColumnIndex, filteredTables.value.length - 1))
-  }
-
-  function getHoverQuarterIndexFromClientY(clientY: number, gridBodyElement: HTMLElement): number {
-    const rect = gridBodyElement.getBoundingClientRect()
-    const offsetFromBodyTop = clientY - rect.top
-    const quarterIndex = Math.floor(offsetFromBodyTop / resolvedQuarterHeight.value)
-    return Math.max(0, Math.min(quarterIndex, totalQuarters.value - 1))
-  }
-
   function updateHoverFromEvent(mouseEvent: MouseEvent) {
-    const gridBodyElement = getGridBody()
+    const gridBodyElement = coordinates.getGridBody()
     if (!gridBodyElement)
       return
 
-    hoverTableIdx.value = getTableIndexFromClientX(mouseEvent.clientX)
-    hoverQuarter.value = getHoverQuarterIndexFromClientY(mouseEvent.clientY, gridBodyElement)
+    hoverTableIdx.value = coordinates.getTableIndexFromClientX(mouseEvent.clientX)
+    hoverQuarter.value = coordinates.getQuarterIndexFromClientY(
+      mouseEvent.clientY,
+      gridBodyElement,
+      'floor',
+      'hover',
+    )
   }
 
   function clearHover() {
@@ -69,8 +45,6 @@ export function useGridHover(
     hoverTableIdx,
     hoverQuarter,
     updateHoverFromEvent,
-    getTableIndexFromClientX,
     clearHover,
-    getGridBody,
   }
 }

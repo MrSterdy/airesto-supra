@@ -1,15 +1,15 @@
-import type { PreferencesContext, UiPreferences } from '@/features/restaurant/domain/normalizePreferences'
+import type { PreferencesContext, UiPreferences } from './normalizePreferences'
 import { createSharedComposable, useColorMode, useCounter, useStorage, useToggle } from '@vueuse/core'
 import { computed, watch } from 'vue'
+import { SCALE_LEVELS } from '@/shared/constants'
 import {
   createDefaultPreferences,
   normalizePreferences,
   UI_PREFERENCES_STORAGE_KEY,
-} from '@/features/restaurant/domain/normalizePreferences'
-import { SCALE_LEVELS } from '@/shared/constants'
+} from './normalizePreferences'
 
 export { UI_PREFERENCES_STORAGE_KEY }
-export type { PreferencesContext, ThemePreference, UiPreferences } from '@/features/restaurant/domain/normalizePreferences'
+export type { PreferencesContext, ThemePreference, UiPreferences } from './normalizePreferences'
 
 const DEFAULT_SCALE_LEVEL = 1
 const MAX_SCALE_LEVEL = SCALE_LEVELS.length - 1
@@ -113,7 +113,7 @@ export const useUiPreferences = createSharedComposable(() => {
   }
 })
 
-/** Нормализация preferences после загрузки mock-контекста. */
+/** Нормализация preferences после загрузки контекста ресторана. */
 export function applyPreferencesContext(context: PreferencesContext) {
   const storage = useUiPreferences().prefs
   const defaults = createDefaultPreferences(context.currentDay)

@@ -17,8 +17,7 @@
     "components": "@/components",
     "utils": "@/shared/lib/utils",
     "ui": "@/components/ui",
-    "lib": "@/lib",
-    "composables": "@/composables"
+    "lib": "@/shared/lib"
   },
   "menuColor": "default",
   "menuAccent": "subtle",

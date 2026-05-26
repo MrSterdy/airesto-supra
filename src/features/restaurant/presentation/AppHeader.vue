@@ -4,8 +4,8 @@ import { unrefElement } from '@vueuse/core'
 import { computed, useTemplateRef } from 'vue'
 import { Button } from '@/components/ui/button'
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group'
+import { useUiPreferences } from '@/core/preferences'
 import { useSearchFocusShortcut } from '@/features/restaurant/application/useSearchFocusShortcut'
-import { useUiPreferences } from '@/features/restaurant/application/useUiPreferences'
 
 defineProps<{ restaurantName: string }>()
 

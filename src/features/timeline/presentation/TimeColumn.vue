@@ -37,7 +37,6 @@ const slotIndicesInView = computed(() => {
     />
 
     <div
-      data-grid-body
       class="relative z-30 shrink-0"
       :style="{ height: `${layout.gridHeight}px` }"
     >

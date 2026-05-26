@@ -1,7 +1,8 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue'
+import type { ComputedRef, Ref } from 'vue'
+import type { useGridCoordinates } from './useGridCoordinates'
+import type { useSelectionConfirm } from './useSelectionConfirm'
 import type { SelectionState, TableInfo } from '@/features/timeline/domain/timeline.types'
-import { useConfirmDialog } from '@vueuse/core'
-import { computed, ref, shallowRef, toValue } from 'vue'
+import { computed, ref } from 'vue'
 import {
   computeNormalizedSelection,
   computeSelectionCapacity,
@@ -10,116 +11,27 @@ import {
   computeSelectionTimeRange,
   formatDurationRussian,
 } from '@/features/timeline/domain/selectionMetrics'
+import { defaultOnBookingConfirm } from './useSelectionConfirm'
 
-type QuarterSnapMode = 'floor' | 'round'
+type GridCoordinates = ReturnType<typeof useGridCoordinates>
 
 /**
  * Drag ЛКМ по сетке: выделение диапазона столов, подтверждение брони.
  */
 export function useGridSelectionDrag(
   filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
-  quarterHeightPx: MaybeRef<number>,
-  totalQuarters: ComputedRef<number>,
   shiftStartMinutes: number,
-  columnWidthPx: MaybeRef<number>,
-  timeColumnWidthPx: MaybeRef<number>,
-  headerHeightPx: MaybeRef<number>,
-  getTableIndexFromClientX: (clientX: number) => number,
-  getGridBody: () => HTMLElement | null,
+  coordinates: GridCoordinates,
+  confirm: ReturnType<typeof useSelectionConfirm>,
+  resolvedMetrics: {
+    columnWidth: ComputedRef<number>
+    quarterHeight: ComputedRef<number>
+    timeColWidth: ComputedRef<number>
+    headerHeight: ComputedRef<number>
+  },
 ) {
-  const resolvedQuarterHeight = computed(() => toValue(quarterHeightPx))
-  const resolvedColumnWidth = computed(() => toValue(columnWidthPx))
-  const resolvedTimeColWidth = computed(() => toValue(timeColumnWidthPx))
-  const resolvedHeaderHeight = computed(() => toValue(headerHeightPx))
-
   const isDragging = ref(false)
   const currentSelection = ref<SelectionState | null>(null)
-  const selectionConfirmed = shallowRef(false)
-
-  const {
-    confirm: confirmDialog,
-    cancel: cancelDialog,
-    onConfirm,
-    onCancel,
-  } = useConfirmDialog(selectionConfirmed)
-
-  function getQuarterIndexFromClientY(
-    clientY: number,
-    gridBodyElement: HTMLElement,
-    snapMode: QuarterSnapMode = 'round',
-  ): number {
-    const rect = gridBodyElement.getBoundingClientRect()
-    const offsetFromBodyTop = clientY - rect.top
-    const quarterHeight = resolvedQuarterHeight.value
-    const quarterIndex = snapMode === 'floor'
-      ? Math.floor(offsetFromBodyTop / quarterHeight)
-      : Math.round(offsetFromBodyTop / quarterHeight)
-    return Math.max(0, Math.min(quarterIndex, totalQuarters.value))
-  }
-
-  function onGridMouseDown(mouseEvent: MouseEvent) {
-    if (mouseEvent.button !== 0)
-      return false
-
-    mouseEvent.preventDefault()
-
-    if (selectionConfirmed.value) {
-      cancelDialog()
-      currentSelection.value = null
-      return true
-    }
-
-    const gridBodyElement = (mouseEvent.currentTarget as HTMLElement).querySelector('[data-grid-body]') as HTMLElement
-    if (!gridBodyElement)
-      return false
-
-    const tableIndex = getTableIndexFromClientX(mouseEvent.clientX)
-    const quarterIndex = getQuarterIndexFromClientY(mouseEvent.clientY, gridBodyElement, 'floor')
-
-    isDragging.value = true
-    currentSelection.value = {
-      startTableIdx: tableIndex,
-      endTableIdx: tableIndex,
-      startQuarter: quarterIndex,
-      endQuarter: quarterIndex,
-    }
-    return true
-  }
-
-  function updateSelectionFromEvent(mouseEvent: MouseEvent) {
-    const gridBodyElement = getGridBody()
-    if (!gridBodyElement || !isDragging.value || !currentSelection.value)
-      return
-
-    currentSelection.value.endTableIdx = getTableIndexFromClientX(mouseEvent.clientX)
-    currentSelection.value.endQuarter = getQuarterIndexFromClientY(mouseEvent.clientY, gridBodyElement)
-  }
-
-  function onGridMouseUp(mouseEvent: MouseEvent) {
-    if (mouseEvent.button !== 0)
-      return
-
-    if (!isDragging.value || !currentSelection.value)
-      return
-
-    isDragging.value = false
-
-    const selection = currentSelection.value
-    const startQuarterIndex = Math.min(selection.startQuarter, selection.endQuarter)
-    const endQuarterIndex = Math.max(selection.startQuarter, selection.endQuarter)
-
-    if (startQuarterIndex === endQuarterIndex) {
-      currentSelection.value = null
-      return
-    }
-
-    currentSelection.value.startQuarter = startQuarterIndex
-    currentSelection.value.endQuarter = endQuarterIndex
-    currentSelection.value.startTableIdx = Math.min(selection.startTableIdx, selection.endTableIdx)
-    currentSelection.value.endTableIdx = Math.max(selection.startTableIdx, selection.endTableIdx)
-
-    selectionConfirmed.value = true
-  }
 
   const normalizedSelection = computed(() => {
     if (!currentSelection.value)
@@ -132,8 +44,8 @@ export function useGridSelectionDrag(
       return null
     return computeSelectionDimensions(
       normalizedSelection.value,
-      resolvedColumnWidth.value,
-      resolvedQuarterHeight.value,
+      resolvedMetrics.columnWidth.value,
+      resolvedMetrics.quarterHeight.value,
     )
   })
 
@@ -143,10 +55,10 @@ export function useGridSelectionDrag(
     return computeSelectionStyle(
       normalizedSelection.value,
       selectionDimensions.value,
-      resolvedTimeColWidth.value,
-      resolvedColumnWidth.value,
-      resolvedHeaderHeight.value,
-      resolvedQuarterHeight.value,
+      resolvedMetrics.timeColWidth.value,
+      resolvedMetrics.columnWidth.value,
+      resolvedMetrics.headerHeight.value,
+      resolvedMetrics.quarterHeight.value,
     )
   })
 
@@ -175,11 +87,10 @@ export function useGridSelectionDrag(
     return computeSelectionCapacity(filteredTables.value, normalizedSelection.value)
   })
 
-  onConfirm(() => {
+  confirm.onConfirm(() => {
     if (!selectionTimeRange.value)
       return
-    // eslint-disable-next-line no-console -- demo booking action
-    console.log('Создать бронирование:', {
+    defaultOnBookingConfirm({
       tables: selectedTables.value.map(table => table.id),
       startTime: selectionTimeRange.value.start,
       endTime: selectionTimeRange.value.end,
@@ -188,27 +99,93 @@ export function useGridSelectionDrag(
     currentSelection.value = null
   })
 
-  onCancel(() => {
+  confirm.onCancel(() => {
     currentSelection.value = null
   })
 
-  function confirmSelection() {
-    confirmDialog()
+  function onGridMouseDown(mouseEvent: MouseEvent) {
+    if (mouseEvent.button !== 0)
+      return false
+
+    mouseEvent.preventDefault()
+
+    if (confirm.selectionConfirmed.value) {
+      confirm.cancelDialog()
+      currentSelection.value = null
+      return true
+    }
+
+    const gridBodyElement = (mouseEvent.currentTarget as HTMLElement).querySelector('[data-grid-body]') as HTMLElement | null
+    if (!gridBodyElement)
+      return false
+
+    const tableIndex = coordinates.getTableIndexFromClientX(mouseEvent.clientX)
+    const quarterIndex = coordinates.getQuarterIndexFromClientY(
+      mouseEvent.clientY,
+      gridBodyElement,
+      'floor',
+      'drag',
+    )
+
+    isDragging.value = true
+    currentSelection.value = {
+      startTableIdx: tableIndex,
+      endTableIdx: tableIndex,
+      startQuarter: quarterIndex,
+      endQuarter: quarterIndex,
+    }
+    return true
   }
 
-  function cancelSelection() {
-    cancelDialog()
+  function updateSelectionFromEvent(mouseEvent: MouseEvent) {
+    const gridBodyElement = coordinates.getGridBody()
+    if (!gridBodyElement || !isDragging.value || !currentSelection.value)
+      return
+
+    currentSelection.value.endTableIdx = coordinates.getTableIndexFromClientX(mouseEvent.clientX)
+    currentSelection.value.endQuarter = coordinates.getQuarterIndexFromClientY(
+      mouseEvent.clientY,
+      gridBodyElement,
+      'round',
+      'drag',
+    )
+  }
+
+  function onGridMouseUp(mouseEvent: MouseEvent) {
+    if (mouseEvent.button !== 0)
+      return
+
+    if (!isDragging.value || !currentSelection.value)
+      return
+
+    isDragging.value = false
+
+    const selection = currentSelection.value
+    const startQuarterIndex = Math.min(selection.startQuarter, selection.endQuarter)
+    const endQuarterIndex = Math.max(selection.startQuarter, selection.endQuarter)
+
+    if (startQuarterIndex === endQuarterIndex) {
+      currentSelection.value = null
+      return
+    }
+
+    currentSelection.value.startQuarter = startQuarterIndex
+    currentSelection.value.endQuarter = endQuarterIndex
+    currentSelection.value.startTableIdx = Math.min(selection.startTableIdx, selection.endTableIdx)
+    currentSelection.value.endTableIdx = Math.max(selection.startTableIdx, selection.endTableIdx)
+
+    confirm.selectionConfirmed.value = true
   }
 
   function clearSelection() {
     isDragging.value = false
-    cancelSelection()
+    confirm.cancelSelection()
   }
 
   return {
     isDragging,
     selection: currentSelection,
-    selectionConfirmed,
+    selectionConfirmed: confirm.selectionConfirmed,
     normalizedSelection,
     selectionDimensions,
     selectionStyle,
@@ -219,8 +196,8 @@ export function useGridSelectionDrag(
     onGridMouseDown,
     updateSelectionFromEvent,
     onGridMouseUp,
-    confirmSelection,
-    cancelSelection,
+    confirmSelection: confirm.confirmSelection,
+    cancelSelection: confirm.cancelSelection,
     clearSelection,
   }
 }

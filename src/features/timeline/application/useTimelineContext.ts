@@ -12,6 +12,10 @@ export interface TimelineContext {
   selectedDay: Ref<string> | ComputedRef<string>
 }
 
+/**
+ * Контекст поддерева TimelineGrid (обязателен для useTimelineGrid).
+ * filteredTables / eventsPerTable - реактивные источники из restaurant feature.
+ */
 export const [provideTimelineContext, useTimelineContext] = createInjectionState(
   (context: TimelineContext) => context,
 )

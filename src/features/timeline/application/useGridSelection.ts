@@ -1,18 +1,23 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue'
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue'
 import type { TableInfo } from '@/features/timeline/domain/timeline.types'
+import { computed, toValue } from 'vue'
+import { useCoalescedPointerMove } from './useCoalescedPointerMove'
+import { useGridCoordinates } from './useGridCoordinates'
 import { useGridEdgeScroll } from './useGridEdgeScroll'
 import { useGridHover } from './useGridHover'
 import { useGridPanning } from './useGridPanning'
 import { useGridSelectionDrag } from './useGridSelectionDrag'
+import { useSelectionConfirm } from './useSelectionConfirm'
 
 /**
- * Выделение диапазона столов и времени на сетке бронирований.
- * Фасад: pan (СКМ), hover, drag ЛКМ + подтверждение. Публичный API без изменений.
+ * Выделение диапазона столов и времени на таблице.
+ * Фасад: pan (СКМ), hover, drag ЛКМ + подтверждение.
  */
 export function useGridSelection(
   gridContainer: Ref<HTMLElement | null>,
+  gridBody: MaybeRefOrGetter<HTMLElement | null>,
   scrollElement: Ref<HTMLElement | null>,
-  filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
+  filteredTables: ComputedRef<TableInfo[]> | import('vue').Ref<TableInfo[]>,
   quarterHeight: MaybeRef<number>,
   totalQuarters: ComputedRef<number>,
   startMinutes: number,
@@ -20,10 +25,14 @@ export function useGridSelection(
   timeColWidth: MaybeRef<number>,
   headerHeight: MaybeRef<number>,
 ) {
-  const panning = useGridPanning(gridContainer, scrollElement)
+  const resolvedColumnWidth = computed(() => toValue(columnWidth))
+  const resolvedQuarterHeight = computed(() => toValue(quarterHeight))
+  const resolvedTimeColWidth = computed(() => toValue(timeColWidth))
+  const resolvedHeaderHeight = computed(() => toValue(headerHeight))
 
-  const hover = useGridHover(
+  const coordinates = useGridCoordinates(
     gridContainer,
+    gridBody,
     filteredTables,
     quarterHeight,
     totalQuarters,
@@ -31,22 +40,22 @@ export function useGridSelection(
     timeColWidth,
   )
 
+  const panning = useGridPanning(gridContainer, scrollElement)
+  const hover = useGridHover(gridContainer, coordinates)
+  const confirm = useSelectionConfirm()
   const drag = useGridSelectionDrag(
     filteredTables,
-    quarterHeight,
-    totalQuarters,
     startMinutes,
-    columnWidth,
-    timeColWidth,
-    headerHeight,
-    hover.getTableIndexFromClientX,
-    hover.getGridBody,
+    coordinates,
+    confirm,
+    {
+      columnWidth: resolvedColumnWidth,
+      quarterHeight: resolvedQuarterHeight,
+      timeColWidth: resolvedTimeColWidth,
+      headerHeight: resolvedHeaderHeight,
+    },
   )
-
   const edgeScroll = useGridEdgeScroll(scrollElement)
-
-  let pendingMoveEvent: MouseEvent | null = null
-  let moveRafId = 0
 
   function processMouseMove(mouseEvent: MouseEvent) {
     if (panning.isPanning.value)
@@ -57,23 +66,12 @@ export function useGridSelection(
     edgeScroll.updateEdgeScroll(mouseEvent.clientX, mouseEvent.clientY, drag.isDragging.value)
   }
 
+  const { onPointerMove } = useCoalescedPointerMove(processMouseMove)
+
   function onGridMouseDown(mouseEvent: MouseEvent) {
     if (panning.startPanningFromMouseDown(mouseEvent))
       return
     drag.onGridMouseDown(mouseEvent)
-  }
-
-  function onGridMouseMove(mouseEvent: MouseEvent) {
-    pendingMoveEvent = mouseEvent
-    if (moveRafId)
-      return
-    moveRafId = requestAnimationFrame(() => {
-      moveRafId = 0
-      const event = pendingMoveEvent
-      pendingMoveEvent = null
-      if (event)
-        processMouseMove(event)
-    })
   }
 
   function onGridMouseUp(mouseEvent: MouseEvent) {
@@ -101,7 +99,7 @@ export function useGridSelection(
     selectionDuration: drag.selectionDuration,
     selectionCapacity: drag.selectionCapacity,
     onGridMouseDown,
-    onGridMouseMove,
+    onGridMouseMove: onPointerMove,
     onGridMouseUp,
     confirmSelection: drag.confirmSelection,
     cancelSelection: drag.cancelSelection,

@@ -1,5 +1,3 @@
-import type { ComputedRef } from 'vue'
-import type { TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import { useScroll } from '@vueuse/core'
 import { computed, ref, toRef, watch } from 'vue'
 import { useBookingLayout } from './useBookingLayout'
@@ -10,12 +8,13 @@ import { useScalePopover } from './useScalePopover'
 import { useSelectionPresentation } from './useSelectionPresentation'
 import { useTimeGrid } from './useTimeGrid'
 import { useTimelineContext } from './useTimelineContext'
+import { useTimelineGridLayout } from './useTimelineGridLayout'
 import { useTimelineScale } from './useTimelineScale'
 import { useTimelineVirtualizer } from './useTimelineVirtualizer'
 import { useTimelineZoomShortcuts } from './useTimelineZoomShortcuts'
 
 /**
- * Оркестрация таблицы.
+ * Оркестрация таблицы бронирований.
  */
 export function useTimelineGrid() {
   const timeline = useTimelineContext()
@@ -25,7 +24,7 @@ export function useTimelineGrid() {
   const { filteredTables, eventsPerTable, openingTime, closingTime, timeZone, currentDay, selectedDay } = timeline
 
   const filteredTablesRef = toRef(() => filteredTables.value)
-  const eventsRef = toRef(() => eventsPerTable.value) as ComputedRef<Map<string, TimelineEvent[]>>
+  const eventsRef = computed(() => eventsPerTable.value)
 
   const {
     scale,
@@ -70,6 +69,8 @@ export function useTimelineGrid() {
   )
 
   const gridContainer = ref<HTMLElement | null>(null)
+  /** Единый якорь Y-координат для hover/drag (см. TimelineGrid [data-grid-body]). */
+  const gridBodyRef = ref<HTMLElement | null>(null)
 
   const {
     scrollElement,
@@ -83,6 +84,7 @@ export function useTimelineGrid() {
 
   const selection = useGridSelection(
     gridContainer,
+    gridBodyRef,
     scrollElement,
     filteredTablesRef,
     quarterHeight,
@@ -91,6 +93,19 @@ export function useTimelineGrid() {
     columnWidth,
     timeColWidth,
     headerHeight,
+  )
+
+  const { hoverOverlayStyle, tableColumnLayout, timeColumnLayout } = useTimelineGridLayout(
+    gridHeight,
+    slotHeight,
+    scale,
+    headerHeight,
+    quarterHeight,
+    columnWidth,
+    totalQuarters,
+    timeSlots,
+    timeColWidth,
+    selection,
   )
 
   const virtualizer = useTimelineVirtualizer({
@@ -108,7 +123,7 @@ export function useTimelineGrid() {
 
   const { y: scrollY, x: scrollX } = useScroll(scrollElement)
 
-  const presentation = useSelectionPresentation(
+  const { useInlineCard, isDialogOpen } = useSelectionPresentation(
     selection.selectionConfirmed,
     selection.selectionDimensions,
     scale,
@@ -133,45 +148,9 @@ export function useTimelineGrid() {
     scalePopover.openFromEvent(mouseEvent)
   }
 
-  const hoverOverlayStyle = computed(() => {
-    if (!selection.isHoverActive())
-      return null
-
-    const tableIdx = selection.hoverTableIdx.value
-    const quarter = selection.hoverQuarter.value
-    if (tableIdx < 0 || quarter < 0)
-      return null
-
-    return {
-      visible: true,
-      left: timeColWidth.value + tableIdx * columnWidth.value,
-      top: headerHeight.value + quarter * quarterHeight.value,
-      width: columnWidth.value,
-      height: quarterHeight.value,
-    }
-  })
-
-  const tableColumnLayout = computed(() => ({
-    gridHeight: gridHeight.value,
-    slotHeight: slotHeight.value,
-    scale: scale.value,
-    headerHeight: headerHeight.value,
-    quarterHeight: quarterHeight.value,
-    columnWidth: columnWidth.value,
-    totalQuarters: totalQuarters.value,
-    timeSlotsCount: timeSlots.value.length,
-  }))
-
-  const timeColumnLayout = computed(() => ({
-    gridHeight: gridHeight.value,
-    slotHeight: slotHeight.value,
-    scale: scale.value,
-    headerHeight: headerHeight.value,
-    timeColWidth: timeColWidth.value,
-  }))
-
   return {
     gridContainer,
+    gridBodyRef,
     scrollElement,
     gridOffsetLeft,
     filteredTables,
@@ -198,7 +177,8 @@ export function useTimelineGrid() {
     tableColumnLayout,
     timeColumnLayout,
     ...selection,
-    ...presentation,
+    useInlineCard,
+    isDialogOpen,
     scalePopoverOpen: scalePopover.isOpen,
     scalePopoverPosition: scalePopover.position,
     popoverRef: scalePopover.popoverRef,

@@ -39,7 +39,7 @@ const {
   confirmSelection,
   cancelSelection,
   useInlineCard,
-  useDialog,
+  isDialogOpen,
   scalePopoverOpen,
   scalePopoverPosition,
   onTableContextMenu,
@@ -93,6 +93,19 @@ const {
         @contextmenu="onTableContextMenu"
       />
 
+      <!-- Y-координаты hover/drag привязаны к этому элементу -->
+      <div
+        :ref="(el) => { grid.gridBodyRef.value = el as HTMLElement | null }"
+        data-grid-body
+        class="absolute pointer-events-none"
+        :style="{
+          left: `${timeColumnLayout.timeColWidth}px`,
+          top: `${timeColumnLayout.headerHeight}px`,
+          width: `${totalWidth - timeColumnLayout.timeColWidth}px`,
+          height: `${timeColumnLayout.gridHeight}px`,
+        }"
+      />
+
       <QuarterHoverOverlay
         v-if="hoverOverlayStyle"
         :visible="hoverOverlayStyle.visible"
@@ -122,8 +135,8 @@ const {
 
     <Teleport to="body">
       <SelectionDialog
-        v-if="useDialog && selectionTimeRange"
-        :open="useDialog"
+        v-if="isDialogOpen && selectionTimeRange"
+        :open="isDialogOpen"
         :time-range="selectionTimeRange"
         :duration="selectionDuration"
         :capacity="selectionCapacity"

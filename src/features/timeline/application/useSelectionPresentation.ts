@@ -36,7 +36,7 @@ export function useSelectionPresentation(
     return width >= CARD_MIN_WIDTH && height >= CARD_MIN_HEIGHT
   })
 
-  const useDialog = computed(() => selectionConfirmed.value && !useInlineCard.value)
+  const isDialogOpen = computed(() => selectionConfirmed.value && !useInlineCard.value)
 
-  return { useInlineCard, useDialog }
+  return { useInlineCard, isDialogOpen }
 }

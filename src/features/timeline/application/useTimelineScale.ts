@@ -1,5 +1,5 @@
 import { computed } from 'vue'
-import { useUiPreferences } from '@/features/restaurant/application/useUiPreferences'
+import { useUiPreferences } from '@/core/preferences'
 import { COLUMN_WIDTH, INDENT, SCALE_LEVELS, SLOT_HEIGHT } from '@/shared/constants'
 
 export { SCALE_LEVELS }

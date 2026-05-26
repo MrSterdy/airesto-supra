@@ -1,14 +1,10 @@
 <script setup lang="ts">
-import { useTitle } from '@vueuse/core'
-import { computed } from 'vue'
-import { initRestaurantFeature } from '@/features/restaurant/application/initRestaurantFeature'
+import { useAppHead } from '@/app/useAppHead'
 import { useRestaurantData } from '@/features/restaurant/application/useRestaurantData'
 import AppHeader from '@/features/restaurant/presentation/AppHeader.vue'
 import BookingFilters from '@/features/restaurant/presentation/BookingFilters.vue'
 import { provideTimelineContext } from '@/features/timeline/application/useTimelineContext'
 import TimelineGrid from '@/features/timeline/presentation/TimelineGrid.vue'
-
-initRestaurantFeature()
 
 const {
   restaurant,
@@ -22,7 +18,7 @@ const {
   searchQuery,
 } = useRestaurantData()
 
-useTitle(computed(() => `AIRESTO | ${restaurant.restaurant_name}`))
+useAppHead(() => restaurant.restaurant_name)
 
 provideTimelineContext({
   filteredTables,

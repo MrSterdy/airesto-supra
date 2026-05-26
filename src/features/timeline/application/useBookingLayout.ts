@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRef, Ref } from 'vue'
 import type { LayoutEvent, TableInfo, TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import { useMemoize } from '@vueuse/core'
 import { computed, toValue } from 'vue'
-import { layoutEventsForTable } from '@/features/timeline/domain/bookingLayout'
+import { layoutEventsForTable } from '@/features/timeline/domain/booking-layout'
 
 function eventsSignature(events: TimelineEvent[]): string {
   if (!events.length)
@@ -11,7 +11,7 @@ function eventsSignature(events: TimelineEvent[]): string {
 }
 
 export function useBookingLayout(
-  filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
+  _filteredTables: ComputedRef<TableInfo[]> | Ref<TableInfo[]>,
   eventsPerTable: ComputedRef<Map<string, TimelineEvent[]>>,
   minutesToPx: (minutes: number) => number,
   columnWidth: MaybeRef<number>,
@@ -46,19 +46,10 @@ export function useBookingLayout(
     )
   }
 
-  /** Меняется при zoom — для :key у TableColumn. */
+  /** Меняется при zoom для :key у TableColumn. */
   const layoutVersion = computed(
     () => `${layoutMetrics.value.columnWidth}:${layoutMetrics.value.indent}:${layoutMetrics.value.slotHeight}`,
   )
 
-  /** @deprecated Используйте getTableLayout; оставлено для совместимости. */
-  const tableLayouts = computed(() => {
-    const layoutsByTableId = new Map<string, LayoutEvent[]>()
-    for (const table of filteredTables.value) {
-      layoutsByTableId.set(table.id, getTableLayout(table.id))
-    }
-    return layoutsByTableId
-  })
-
-  return { getTableLayout, layoutVersion, tableLayouts }
+  return { getTableLayout, layoutVersion }
 }

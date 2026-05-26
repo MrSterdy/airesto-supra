@@ -65,11 +65,6 @@ export function useTimelineVirtualizer(options: {
     () => options.headerHeight.value + rowVirtualizer.value.getTotalSize(),
   )
 
-  const visibleTableIds = computed(() => {
-    const cols = virtualColumns.value
-    return new Set(cols.map(col => col.index))
-  })
-
   watch(
     () => [
       options.columnWidth.value,
@@ -91,7 +86,6 @@ export function useTimelineVirtualizer(options: {
     virtualRows,
     virtualColumns,
     visibleRowRange,
-    visibleTableIds,
     totalWidth,
     totalScrollHeight,
     overscan,

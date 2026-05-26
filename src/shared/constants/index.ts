@@ -3,7 +3,6 @@ export const SCALE_LEVELS = [0.75, 1, 1.25, 1.5, 1.75] as const
 export const SLOT_HEIGHT = 40
 export const COLUMN_WIDTH = 80
 export const INDENT = 4
-export const INTERSECTION_THRESHOLD = 30
 
 const DEFAULT_ORDER_COLOR = { bg: 'rgba(127, 215, 204, 0.16)', border: '#7FD7CC' }
 const DEFAULT_RESERVATION_COLOR = { bg: 'rgba(255, 112, 67, 0.16)', border: '#FF7043' }

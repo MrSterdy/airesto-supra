@@ -2,9 +2,9 @@
 import { computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { useZoneFilter } from '@/features/restaurant/application/useZoneFilter'
 import { getRelativeDayLabel } from '@/shared/lib/dateLabels'
 import { formatRussianDay } from '@/shared/lib/formatRussianDay'
-import { useZoneFilter } from './composables/useZoneFilter'
 
 const props = defineProps<{
   availableDays: string[]
