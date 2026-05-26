@@ -20,7 +20,7 @@ export function useRestaurantData() {
   const currentDay = data.current_day
 
   const selectedDay = ref(currentDay)
-  const selectedZone = ref<string | null>(null)
+  const selectedZones = ref<string[]>([])
   const searchQuery = ref('')
 
   const zones = computed(() => {
@@ -41,8 +41,9 @@ export function useRestaurantData() {
 
   const visibleTables = computed(() => {
     let tables = data.tables
-    if (selectedZone.value) {
-      tables = tables.filter(t => t.zone === selectedZone.value)
+    if (selectedZones.value.length > 0) {
+      const zones = new Set(selectedZones.value)
+      tables = tables.filter(t => zones.has(t.zone))
     }
     const query = searchQuery.value.trim().toLowerCase()
     if (query) {
@@ -112,7 +113,7 @@ export function useRestaurantData() {
     availableDays,
     currentDay,
     selectedDay,
-    selectedZone,
+    selectedZones,
     searchQuery,
     zones,
     filteredTables,

@@ -8,12 +8,12 @@ const props = defineProps<{
   currentDay: string
   selectedDay: string
   zones: string[]
-  selectedZone: string | null
+  selectedZones: string[]
 }>()
 
 const emit = defineEmits<{
   'update:selectedDay': [value: string]
-  'update:selectedZone': [value: string | null]
+  'update:selectedZones': [value: string[]]
 }>()
 
 function formatDay(dateStr: string) {
@@ -43,13 +43,23 @@ const displayDays = computed(() =>
   })),
 )
 
-function selectZone(zone: string) {
-  if (props.selectedZone === zone) {
-    emit('update:selectedZone', null)
+function isZoneActive(zone: string) {
+  return props.selectedZones.length === 0 || props.selectedZones.includes(zone)
+}
+
+function toggleZone(zone: string) {
+  if (props.selectedZones.length === 0) {
+    emit('update:selectedZones', [zone])
+    return
   }
-  else {
-    emit('update:selectedZone', zone)
+
+  if (props.selectedZones.includes(zone)) {
+    const next = props.selectedZones.filter(z => z !== zone)
+    emit('update:selectedZones', next)
+    return
   }
+
+  emit('update:selectedZones', [...props.selectedZones, zone])
 }
 </script>
 
@@ -79,8 +89,8 @@ function selectZone(zone: string) {
           :key="zone"
           type="button"
           size="sm"
-          :variant="selectedZone === zone || selectedZone === null ? 'default' : 'secondary'"
-          @click="selectZone(zone)"
+          :variant="isZoneActive(zone) ? 'default' : 'secondary'"
+          @click="toggleZone(zone)"
         >
           {{ zone }}
         </Button>

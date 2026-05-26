@@ -9,7 +9,7 @@ const {
   availableDays,
   currentDay,
   selectedDay,
-  selectedZone,
+  selectedZones,
   zones,
   filteredTables,
   eventsPerTable,
@@ -33,9 +33,9 @@ const {
       :current-day="currentDay"
       :selected-day="selectedDay"
       :zones="zones"
-      :selected-zone="selectedZone"
+      :selected-zones="selectedZones"
       @update:selected-day="selectedDay = $event"
-      @update:selected-zone="selectedZone = $event"
+      @update:selected-zones="selectedZones = $event"
     />
 
     <TimelineGrid
