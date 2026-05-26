@@ -1,18 +1,7 @@
 import type { ApiTable } from './restaurant.types'
 import type { TableInfo, TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import { getOrderTitle } from '@/shared/constants'
-
-/** Преобразование ISO datetime в минуты от полуночи. */
-export function isoToMinutes(iso: string): number {
-  const match = iso.match(/T(\d{2}):(\d{2})/)
-  if (!match)
-    return 0
-  return Number(match[1]) * 60 + Number(match[2])
-}
-
-export function isoToDate(iso: string): string {
-  return iso.slice(0, 10)
-}
+import { isoToCalendarDate, isoToMinutesFromMidnight } from '@/shared/lib/restaurantTime'
 
 export interface ReservationSearchEntry {
   tableId: string
@@ -23,12 +12,13 @@ export interface ReservationSearchEntry {
 export function buildReservationSearchIndex(
   tables: ApiTable[],
   selectedDay: string,
+  timeZone: string,
 ): ReservationSearchEntry[] {
   const reservationSearchEntries: ReservationSearchEntry[] = []
 
   for (const table of tables) {
     for (const reservation of table.reservations) {
-      if (isoToDate(reservation.seating_time) !== selectedDay)
+      if (isoToCalendarDate(reservation.seating_time, timeZone) !== selectedDay)
         continue
       reservationSearchEntries.push({
         tableId: table.id,
@@ -44,6 +34,7 @@ export function buildReservationSearchIndex(
 export function buildEventsPerTable(
   tables: ApiTable[],
   selectedDay: string,
+  timeZone: string,
 ): Map<string, TimelineEvent[]> {
   const eventsByTableId = new Map<string, TimelineEvent[]>()
 
@@ -51,29 +42,29 @@ export function buildEventsPerTable(
     const events: TimelineEvent[] = []
 
     for (const order of table.orders) {
-      if (isoToDate(order.start_time) !== selectedDay)
+      if (isoToCalendarDate(order.start_time, timeZone) !== selectedDay)
         continue
       events.push({
         id: order.id,
         tableId: table.id,
         kind: 'order',
         status: order.status,
-        startMinutes: isoToMinutes(order.start_time),
-        endMinutes: isoToMinutes(order.end_time),
+        startMinutes: isoToMinutesFromMidnight(order.start_time, timeZone),
+        endMinutes: isoToMinutesFromMidnight(order.end_time, timeZone),
         title: getOrderTitle(order.status),
       })
     }
 
     for (const reservation of table.reservations) {
-      if (isoToDate(reservation.seating_time) !== selectedDay)
+      if (isoToCalendarDate(reservation.seating_time, timeZone) !== selectedDay)
         continue
       events.push({
         id: String(reservation.id),
         tableId: table.id,
         kind: 'reservation',
         status: reservation.status,
-        startMinutes: isoToMinutes(reservation.seating_time),
-        endMinutes: isoToMinutes(reservation.end_time),
+        startMinutes: isoToMinutesFromMidnight(reservation.seating_time, timeZone),
+        endMinutes: isoToMinutesFromMidnight(reservation.end_time, timeZone),
         name: reservation.name_for_reservation,
         phone: reservation.phone_number,
         guests: reservation.num_people,

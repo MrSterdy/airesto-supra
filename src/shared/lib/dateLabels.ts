@@ -1,24 +1,18 @@
+import { differenceInCalendarDays, format, parse } from 'date-fns'
+import { ru } from 'date-fns/locale'
+
 /**
- * Относительная подпись дня для кнопок фильтра («сегодня», «завтра», день недели).
+ * Относительная подпись дня для кнопок фильтра.
  */
 export function getRelativeDayLabel(dateStr: string, currentDay: string): string {
-  const today = new Date(`${currentDay}T00:00:00`)
-  const target = new Date(`${dateStr}T00:00:00`)
-  const dayDiff = Math.round((target.getTime() - today.getTime()) / 86400000)
+  const today = parse(currentDay, 'yyyy-MM-dd', new Date())
+  const target = parse(dateStr, 'yyyy-MM-dd', new Date())
+  const dayDiff = differenceInCalendarDays(target, today)
 
   if (dayDiff === 0)
     return 'сегодня'
   if (dayDiff === 1)
     return 'завтра'
 
-  const weekdays = [
-    'воскресенье',
-    'понедельник',
-    'вторник',
-    'среда',
-    'четверг',
-    'пятница',
-    'суббота',
-  ]
-  return weekdays[target.getDay()]
+  return format(target, 'EEEE', { locale: ru })
 }

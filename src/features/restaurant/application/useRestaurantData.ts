@@ -29,7 +29,7 @@ const useRestaurantDataState = createSharedComposable(() => {
   const debouncedSearchQuery = refDebounced(searchQuery, 200)
 
   const reservationSearchIndex = computed(() =>
-    buildReservationSearchIndex(data.tables, selectedDay.value),
+    buildReservationSearchIndex(data.tables, selectedDay.value, restaurant.timezone),
   )
 
   const { results: fuseResults } = useFuse(
@@ -71,7 +71,7 @@ const useRestaurantDataState = createSharedComposable(() => {
   )
 
   const eventsPerTable = computed(() =>
-    buildEventsPerTable(visibleTables.value, selectedDay.value),
+    buildEventsPerTable(visibleTables.value, selectedDay.value, restaurant.timezone),
   )
 
   return {

@@ -1,5 +1,8 @@
-import { formatDate } from '@vueuse/core'
+import { format, parse } from 'date-fns'
+import { ru } from 'date-fns/locale'
 
+/** Форматирует календарную дату YYYY-MM-DD. */
 export function formatRussianDay(dateStr: string): string {
-  return formatDate(new Date(`${dateStr}T00:00:00`), 'D MMMM', { locales: 'ru-RU' })
+  const date = parse(dateStr, 'yyyy-MM-dd', new Date())
+  return format(date, 'd MMMM', { locale: ru })
 }
