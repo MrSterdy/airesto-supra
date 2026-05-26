@@ -49,9 +49,9 @@ const hovered = ref(false)
         </span>
 
         <template v-if="event.kind === 'reservation'">
-          <div class="flex flex-wrap text-[11px] leading-[14px] font-semibold text-foreground min-w-0">
-            <span class="truncate">{{ event.name }};&#32;</span>
-            <span>{{ event.guests }}<span class="font-normal">чел</span></span>
+          <div class="flex flex-wrap gap-0.5 text-[11px] leading-[14px] font-semibold text-foreground min-w-0">
+            <span class="truncate">{{ event.name }};</span>
+            <span>{{ event.guests }}&nbsp;<span class="font-normal">чел</span></span>
           </div>
         </template>
 
