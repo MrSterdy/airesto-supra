@@ -12,6 +12,10 @@ const SelectionDialog = defineAsyncComponent(
   () => import('./selection/SelectionDialog.vue'),
 )
 
+const EventDetailsDialog = defineAsyncComponent(
+  () => import('./event/EventDetailsDialog.vue'),
+)
+
 const grid = useTimelineGrid()
 
 const gridContainerEl = useTemplateRef<HTMLElement>('gridContainer')
@@ -51,6 +55,10 @@ const {
   scalePopoverOpen,
   scalePopoverPosition,
   onTableContextMenu,
+  eventDetailsOpen,
+  eventDetails,
+  openEventDetails,
+  closeEventDetails,
   virtualizer,
   gridOffsetLeft,
   hoverOverlayStyle,
@@ -99,6 +107,7 @@ const {
         :visible-row-range="visibleRowRange"
         :column-left="virtualCol.start - gridOffsetLeft"
         @contextmenu="onTableContextMenu"
+        @event-activate="openEventDetails"
       />
 
       <!-- Y-координаты hover/drag привязаны к этому элементу -->
@@ -148,6 +157,12 @@ const {
         :selected-day="selectedDay"
         @confirm="confirmSelection"
         @cancel="cancelSelection"
+      />
+      <EventDetailsDialog
+        v-if="eventDetailsOpen && eventDetails"
+        :open="eventDetailsOpen"
+        :details="eventDetails"
+        @close="closeEventDetails"
       />
       <ScalePopover
         v-if="scalePopoverOpen"

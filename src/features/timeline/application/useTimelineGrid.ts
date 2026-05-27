@@ -1,6 +1,7 @@
 import { computed, ref, watch } from 'vue'
 import { useBookingLayout } from './useBookingLayout'
 import { useCurrentTime } from './useCurrentTime'
+import { useEventDetails } from './useEventDetails'
 import { useGridScrollAnchors } from './useGridScrollAnchors'
 import { useGridSelection } from './useGridSelection'
 import { useScalePopover } from './useScalePopover'
@@ -90,6 +91,22 @@ export function useTimelineGrid() {
     headerHeight,
   )
 
+  const eventDetails = useEventDetails(
+    filteredTables,
+    selectedDay,
+    selection.clearSelection,
+  )
+
+  const gridInteraction = {
+    isHoverActive(): boolean {
+      if (eventDetails.isOpen.value)
+        return false
+      return selection.isHoverActive()
+    },
+    hoverTableIdx: selection.hoverTableIdx,
+    hoverQuarter: selection.hoverQuarter,
+  }
+
   const { hoverOverlayStyle, tableColumnLayout, timeColumnLayout } = useTimelineGridLayout(
     gridHeight,
     slotHeight,
@@ -100,7 +117,7 @@ export function useTimelineGrid() {
     totalQuarters,
     timeSlots,
     timeColWidth,
-    selection,
+    gridInteraction,
   )
 
   const virtualizer = useTimelineVirtualizer({
@@ -165,6 +182,10 @@ export function useTimelineGrid() {
     tableColumnLayout,
     timeColumnLayout,
     ...selection,
+    eventDetailsOpen: eventDetails.isOpen,
+    eventDetails: eventDetails.details,
+    openEventDetails: eventDetails.openEvent,
+    closeEventDetails: eventDetails.closeEvent,
     useInlineCard,
     isDialogOpen,
     scalePopoverOpen: scalePopover.isOpen,

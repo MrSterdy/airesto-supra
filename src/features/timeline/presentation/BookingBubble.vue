@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LayoutEvent } from '@/features/timeline/domain/timeline.types'
+import type { LayoutEvent, TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import { Phone } from '@lucide/vue'
 import { useElementHover } from '@vueuse/core'
 import { computed, useTemplateRef } from 'vue'
@@ -14,9 +14,56 @@ const props = withDefaults(defineProps<{
   enableHover: true,
 })
 
-const HOVER_Z_INDEX = 1000
+const emit = defineEmits<{
+  activate: [event: TimelineEvent]
+}>()
 
 const event = computed(() => props.layoutEvent.event)
+
+/** Порог движения указателя: выше — считаем drag, модалку не открываем. */
+const CLICK_DRAG_THRESHOLD_PX = 5
+
+let pointerDownX = 0
+let pointerDownY = 0
+let pointerDragged = false
+
+function onBubblePointerDown(pointerEvent: PointerEvent) {
+  if (pointerEvent.button !== 0)
+    return
+
+  pointerDownX = pointerEvent.clientX
+  pointerDownY = pointerEvent.clientY
+  pointerDragged = false
+
+  function onDocumentPointerMove(moveEvent: PointerEvent) {
+    if ((moveEvent.buttons & 1) === 0)
+      return
+
+    const deltaX = moveEvent.clientX - pointerDownX
+    const deltaY = moveEvent.clientY - pointerDownY
+    if (deltaX * deltaX + deltaY * deltaY > CLICK_DRAG_THRESHOLD_PX ** 2)
+      pointerDragged = true
+  }
+
+  function onDocumentPointerUp() {
+    document.removeEventListener('pointermove', onDocumentPointerMove)
+    document.removeEventListener('pointerup', onDocumentPointerUp)
+    document.removeEventListener('pointercancel', onDocumentPointerUp)
+  }
+
+  document.addEventListener('pointermove', onDocumentPointerMove)
+  document.addEventListener('pointerup', onDocumentPointerUp)
+  document.addEventListener('pointercancel', onDocumentPointerUp)
+}
+
+function onBubbleClick(mouseEvent: MouseEvent) {
+  mouseEvent.stopPropagation()
+  if (pointerDragged)
+    return
+  emit('activate', event.value)
+}
+
+const HOVER_Z_INDEX = 1000
 const color = computed(() => getEventColor(event.value.kind, event.value.status))
 const badgeColor = computed(() => getBadgeColor(event.value.status))
 
@@ -56,11 +103,13 @@ const {
     />
     <div
       ref="content"
-      class="flex-1 min-w-0 pointer-events-auto"
+      class="flex-1 min-w-0 pointer-events-auto cursor-pointer"
       :class="enableHover && hovered ? 'overflow-visible' : 'overflow-hidden'"
       :style="layoutEvent.contentMaxHeight != null
         ? { maxHeight: `${layoutEvent.contentMaxHeight}px` }
         : undefined"
+      @pointerdown="onBubblePointerDown"
+      @click="onBubbleClick"
     >
       <div
         class="flex flex-col pointer-events-none"

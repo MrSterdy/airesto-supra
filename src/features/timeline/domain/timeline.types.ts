@@ -1,7 +1,6 @@
 import type { ComputedRef, Ref } from 'vue'
 import type { OrderStatus, ReservationStatus } from '@/shared/constants'
 
-/** Тип события на временной шкале. */
 export type EventKind = 'order' | 'reservation'
 
 export interface TimelineEvent {
@@ -18,7 +17,6 @@ export interface TimelineEvent {
   cancelled?: boolean
 }
 
-/** Событие с вычисленной геометрией для отрисовки. */
 export interface LayoutEvent {
   event: TimelineEvent
   top: number
@@ -29,7 +27,6 @@ export interface LayoutEvent {
   stackIndex: number
 }
 
-/** Состояние drag-выделения (индексы столов и quarter-слотов). */
 export interface SelectionState {
   startTableIdx: number
   endTableIdx: number
@@ -44,7 +41,6 @@ export interface TableInfo {
   capacity: number
 }
 
-/** Реактивный список столов (ref или computed). */
 export type TableListRef = Ref<TableInfo[]> | ComputedRef<TableInfo[]>
 
 export interface NormalizedSelection {
@@ -64,7 +60,14 @@ export interface SelectionTimeRange {
   end: string
 }
 
-/** Общие props карточки и диалога подтверждения брони. */
+export interface EventDetailsViewModel {
+  event: TimelineEvent
+  table: TableInfo
+  selectedDay: string
+  timeRange: SelectionTimeRange
+  duration: string
+}
+
 export interface SelectionBookingProps {
   timeRange: SelectionTimeRange
   duration: string
@@ -73,10 +76,8 @@ export interface SelectionBookingProps {
   selectedDay: string
 }
 
-/** CSS-стили прямоугольника выделения (px). */
 export type SelectionBoxStyle = Record<string, string>
 
-/** Метрики сетки для расчёта стилей выделения. */
 export interface GridMetrics {
   columnWidth: Ref<number> | ComputedRef<number>
   quarterHeight: Ref<number> | ComputedRef<number>

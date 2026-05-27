@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LayoutEvent, TableInfo } from '@/features/timeline/domain/timeline.types'
+import type { LayoutEvent, TableInfo, TimelineEvent } from '@/features/timeline/domain/timeline.types'
 import type { TableColumnLayoutProps, VisibleRowRange } from '@/features/timeline/domain/timelineLayout.types'
 import { computed } from 'vue'
 import { useScaledTypography } from '@/features/timeline/application/useScaledTypography'
@@ -21,6 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   contextmenu: [event: MouseEvent]
+  eventActivate: [event: TimelineEvent]
 }>()
 
 const { labelStyle, titleStyle } = useScaledTypography(() => props.layout.scale)
@@ -92,6 +93,7 @@ function onContextMenu(mouseEvent: MouseEvent) {
         :layout-event="layoutEvent"
         :scale="layout.scale"
         :enable-hover="true"
+        @activate="emit('eventActivate', $event)"
       />
     </div>
   </div>
